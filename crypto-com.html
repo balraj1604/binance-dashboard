@@ -114,45 +114,47 @@
   <div class="brand">
     <div class="brand-mark">C</div>
     <div>
-      <h1>Crypto.com Activity Dashboard<span class="ver">v2 · CSV-grade</span></h1>
-      <div class="sub">Full reconstruction from official Transaction History export · refreshed 2026-06-04</div>
+      <h1>Crypto.com Activity Dashboard<span class="ver">v3 · full history</span></h1>
+      <div class="sub">Combined CSV exports (2021-2022 + 2024-2026) · refreshed 2026-06-04</div>
     </div>
   </div>
   <div class="meta">
     App account opened <b>2021-09-12</b><br>
     Reporting through <b>2026-06-04</b><br>
-    <b>393 transactions</b> from CSV
+    <b>426 transactions</b> across 2 CSV exports
   </div>
 </header>
 
 <div class="balance-card">
-  <h2>Current holdings ↔ Reconstructed from CSV</h2>
+  <h2>Current holdings — full reconstruction</h2>
   <div class="lead">
-    <span style="color:var(--gold)">0.05618 BTC</span> · <span style="color:#8aa1ff">0.299 ETH</span> · <span style="color:#c39cff">2.53 SOL</span> · <span style="color:#e6c177">1,097 DOGE</span> · <span style="color:#129DFF">1,246 CRO locked</span>
-    <small>+ meme bag from Airdrop Arena (3.49M CAW, 82k VVS, 69k BARA, 13.5k PEPE, 10k SHIB and more — total ~$3.72 USD)</small>
+    <span style="color:var(--gold)">0.05618 BTC</span> · <span style="color:#8aa1ff">0.300 ETH</span> · <span style="color:#c39cff">7.53 SOL</span> · <span style="color:#e6c177">1,097 DOGE</span> · <span style="color:#129DFF">1,850 CRO locked</span>
+    <small>+ 604 CRO in <b>Earn lockup</b> since Dec 2021 · 1,246 CRO in Airdrop Arena since 2024 · meme bag (~$3.72) · 0.0791 ETHW from PoS merge fork (~$0.20)</small>
   </div>
   <div class="recon">
-    <div class="in"><span>Card spend in</span><b>$2,700 USD</b></div>
-    <div class="in"><span>Crypto deposits</span><b>$1,995 USD-eq</b></div>
-    <div class="net"><span>ETH staked (DPoS)</span><b>0.07915 ETH</b></div>
-    <div class="net"><span>Interest payouts</span><b>361 events</b></div>
+    <div class="in"><span>Total fiat spent</span><b>~$7,500 USD</b></div>
+    <div class="in"><span>Crypto deposits in</span><b>$1,995 USD-eq</b></div>
+    <div class="out"><span>Crypto withdrawn out</span><b>→ Binance 2021</b></div>
+    <div class="net"><span>Today's value</span><b>≈ $6,100</b></div>
   </div>
 </div>
 
 <div class="kpi-grid">
-  <div class="kpi gold"><label>BTC accumulated</label><div class="val">0.05618 <small>BTC</small></div><div class="hint">3 buys + 1 swap + airdrop dust</div></div>
-  <div class="kpi"><label>ETH (spot + staked)</label><div class="val">~0.299 <small>ETH</small></div><div class="hint">0.22 spot · 0.079 staked at DPoS</div></div>
-  <div class="kpi purple"><label>ETH interest earned</label><div class="val">0.0102 <small>ETH</small></div><div class="hint">361 payouts since Jan 2024</div></div>
-  <div class="kpi green"><label>CRO in Airdrop Arena</label><div class="val">1,246 <small>CRO</small></div><div class="hint">Locked since Aug 2024 · earns meme bag</div></div>
+  <div class="kpi gold"><label>BTC accumulated</label><div class="val">0.05618 <small>BTC</small></div><div class="hint">3 card buys + 1 USDT swap (~$3,540 today)</div></div>
+  <div class="kpi"><label>ETH (spot + staked)</label><div class="val">~0.30 <small>ETH</small></div><div class="hint">0.22 spot · 0.079 in DPoS staking (~$945)</div></div>
+  <div class="kpi purple"><label>SOL accumulated</label><div class="val">7.53 <small>SOL</small></div><div class="hint">5 bought 2022 + 2.53 from Binance 2024 (~$1,054)</div></div>
+  <div class="kpi green"><label>CRO locked</label><div class="val">1,850 <small>CRO</small></div><div class="hint">604 in Earn lockup + 1,246 in Arena (~$185)</div></div>
 </div>
 
 <div class="row wide">
   <div class="card">
-    <h2>Major transactions <span class="count">9 events that moved real money</span></h2>
-    <table>
-      <thead><tr><th>Time (UTC)</th><th>Event</th><th>Asset</th><th class="mono">Amount</th><th>USD</th></tr></thead>
-      <tbody id="majorsBody"></tbody>
-    </table>
+    <h2>Major transactions <span class="count">25 events that moved real money</span></h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Time (UTC)</th><th>Event</th><th>Asset</th><th class="mono">Amount</th><th>USD</th></tr></thead>
+        <tbody id="majorsBody"></tbody>
+      </table>
+    </div>
   </div>
   <div class="card">
     <h2>BTC acquisition breakdown <span class="count">0.0562 BTC</span></h2>
@@ -222,23 +224,42 @@
 <script>
 // ===== Data =====
 const MAJORS = [
-  ["2024-01-03 05:49","DPoS staking","ETH","-0.079145",185.09,"stake"],
-  ["2024-01-08 05:37","USDT (ERC20) Deposit","USDT","750.6829",738.88,"in"],
+  ["2021-09-15 23:22","Bought CRO","CRO","1000",189.93,"buy","First buy ever"],
+  ["2021-09-15 23:27","Bought USDC","USDC","250",250.00,"buy"],
+  ["2021-09-15 23:29","Crypto Earn — USDC locked","USDC","-250",250.00,"stake","12% APR"],
+  ["2021-09-15 23:52","Bought ADA","ADA","388",976.93,"buy"],
+  ["2021-09-16 00:19","Withdraw ADA → Binance","ADA","-388",953.44,"out","matches Binance deposits 9.2+377.2"],
+  ["2021-09-17 03:00","Bought AVAX","AVAX","2.9",192.95,"buy"],
+  ["2021-09-17 16:59","Withdraw AVAX → Binance","AVAX","-2.9",188.54,"out","matches Binance deposits 0.147+2.743"],
+  ["2021-09-20 01:23","Bought USDT","USDT","500",505.01,"buy"],
+  ["2021-09-20 12:07","Bought USDT","USDT","1772.07",1793.31,"buy"],
+  ["2021-09-20 12:46","Withdraw USDT → Binance","USDT","-2282.07",2263.46,"out","matches Binance deposits 475+1757.07"],
+  ["2021-12-04 14:36","Bought CRO","CRO","850",478.26,"buy"],
+  ["2021-12-05 04:33","CRO Earn lockup","CRO","-604",360.28,"stake","Lockup tier · not Visa Card (not avail. in JP)"],
+  ["2021-12-14 23:30","Crypto Earn USDC withdrawn","USDC","250",250.00,"in","+ 6.13 USDC interest earned"],
+  ["2022-01-08 06:15","USDC → ETH swap","USDC","-256.15",256.15,"sell","→ 0.079145 ETH"],
+  ["2022-01-24 03:13","Bought SOL","SOL","5",464.81,"buy"],
+  ["2022-09-20 16:02","ETHW airdrop (PoS merge)","ETHW","0.079145",0.54,"in","Free fork token"],
+  ["2024-01-03 05:49","DPoS staking — ETH locked","ETH","-0.079145",185.09,"stake","Same ETH from 2022 swap"],
+  ["2024-01-08 05:37","USDT Deposit (ERC20)","USDT","750.6829",738.88,"in"],
   ["2024-02-29 03:48","USDT → BTC swap","USDT","-750.6829",738.88,"sell","→ 0.0120656 BTC"],
   ["2024-03-14 17:49","Bought DOGE","DOGE","1096.3",200.00,"buy","VISA ***6877 · $0.182/DOGE"],
-  ["2024-04-19 05:31","ETH Deposit (from Binance)","ETH","0.29412115",870.85,"in"],
-  ["2024-04-22 21:14","SOL Deposit (from Binance)","SOL","2.52927538",385.52,"in"],
+  ["2024-04-19 05:31","ETH Deposit (from Binance)","ETH","0.29412115",870.85,"in","Binance withdrawal trail"],
+  ["2024-04-22 21:14","SOL Deposit (from Binance)","SOL","2.52927538",385.52,"in","Binance withdrawal trail"],
   ["2024-07-05 05:57","Bought BTC","BTC","0.0179996",1000.00,"buy","VISA ***6877 · $55,556/BTC"],
   ["2024-08-06 16:00","Bought BTC","BTC","0.0261176",1500.00,"buy","VISA ***6877 · $57,432/BTC"],
-  ["2024-08-08 15:31","CRO → Airdrop Arena","CRO","-1246",99.45,"stake","Locked stake"],
+  ["2024-08-08 15:31","CRO → Airdrop Arena","CRO","-1246",99.45,"stake","Locked for meme airdrops"],
 ];
 
 // Approx prices for USD value
 const PX = {BTC:63000, ETH:3150, SOL:140, DOGE:0.30, CRO:0.10, USDT:1, ADA:0.45, XRP:2.20, AVAX:23, APT:5.50, DOT:4.00, SUI:3.00, SHIB:0.0000175, PEPE:0.00001, CAW:0.000000017, VVS:0.0000005, BARA:0.0000002, DIP:0.0008, PUMP:0.002, PENGU:0.015, CORGIAI:0.0003, LION:0.005, CROB:0.05};
 
+// Combined holdings (2021-22 + 2024-26)
+// ETH = 0.22 spot + 0.079 staked (DPoS) ; SOL = 5 from 2022 + 2.53 from 2024 + 0.001 airdrop
 const NET = {
-  ETH:0.22022533, BTC:0.05618445, SOL:2.53048222, DOGE:1096.89118887,
+  ETH:0.30022533, BTC:0.05618445, SOL:7.53048222, DOGE:1096.89118887, CRO:0,
   ADA:0.450662, XRP:0.057335, AVAX:0.00835851, APT:0.11863895, DOT:0.10045802, SUI:0.148943087,
+  ETHW:0.079145,
   PEPE:13509.227376, SHIB:10045.778698, CAW:3487227.434685, VVS:82551.304626, BARA:69100.086848,
   DIP:362.232453, PUMP:75.981668, PENGU:51.040452, CORGIAI:170.255995, LION:5.640816, CROB:10.416697,
 };
@@ -305,15 +326,20 @@ ordered.slice(0,12).forEach(({asset,qty,usd:u})=>{
     el('td',{class:'mono small',text:u>0.01?usd(u):'<$0.01'})
   ));
 });
-// Add CRO row (negative; locked in arena)
+// Add CRO rows (locked in Visa Card + Arena)
 netBody.appendChild(el('tr',null,
-  el('td',null,assetSpan('CRO'), pill('Locked','stake')),
+  el('td',null,assetSpan('CRO'), pill('Earn lock','stake')),
+  el('td',{class:'mono',text:'604.00'}),
+  el('td',{class:'mono small',text:usd(604*PX.CRO)})
+));
+netBody.appendChild(el('tr',null,
+  el('td',null,assetSpan('CRO'), pill('Arena','stake')),
   el('td',{class:'mono',text:'1,246.00'}),
   el('td',{class:'mono small',text:usd(1246*PX.CRO)})
 ));
 
 // Total
-const totalUsd = ordered.reduce((s,x)=>s+x.usd,0) + 1246*PX.CRO;
+const totalUsd = ordered.reduce((s,x)=>s+x.usd,0) + 1850*PX.CRO;
 netBody.appendChild(el('tr',{style:'font-weight:700;background:rgba(18,157,255,0.05)'},
   el('td',null,el('b',{text:'TOTAL'})),
   el('td',{class:'mono',text:''}),
