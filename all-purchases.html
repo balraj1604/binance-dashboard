@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>All Crypto Purchases — Cross-Platform Tracker</title>
+<style>
+  :root{
+    --bg:#0a0a0c; --panel:#13131a; --panel2:#1b1b25; --line:#26263a;
+    --text:#e9e9f1; --mute:#8a8aa3;
+    --accent:#f0b90b;
+    --green:#22c55e; --red:#ef4444; --blue:#3b82f6; --gold:#f7931a;
+    --mono:'JetBrains Mono', SFMono-Regular, ui-monospace, monospace;
+    --sans:-apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.5}
+  body{min-height:100vh;padding:32px 28px 80px;max-width:1500px;margin:0 auto}
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:24px;margin-bottom:22px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand-mark{width:34px;height:34px;background:linear-gradient(135deg,#f0b90b,#f7931a);border-radius:8px;display:grid;place-items:center;color:#0a0a0c;font-weight:900;font-family:var(--mono);font-size:18px}
+  h1{font-size:24px;font-weight:700;margin:0;letter-spacing:-0.01em}
+  .sub{color:var(--mute);font-size:13px;margin-top:2px}
+  .meta{font-family:var(--mono);font-size:12px;color:var(--mute);text-align:right}
+  .meta b{color:var(--text);font-weight:500}
+  .back{color:var(--mute);text-decoration:none;font-family:var(--mono);font-size:12px;display:inline-block;margin-bottom:8px}
+  .back:hover{color:var(--text)}
+  .pnl-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:22px}
+  .pnl{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;position:relative;overflow:hidden}
+  .pnl::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent)}
+  .pnl.green::before{background:var(--green)}
+  .pnl.red::before{background:var(--red)}
+  .pnl.gold::before{background:var(--gold)}
+  .pnl.blue::before{background:var(--blue)}
+  .pnl label{display:block;color:var(--mute);font-size:11px;text-transform:uppercase;letter-spacing:0.07em;font-weight:600;margin-bottom:6px}
+  .pnl .val{font-family:var(--mono);font-size:22px;font-weight:700;letter-spacing:-0.02em;line-height:1.1}
+  .pnl .val small{font-size:12px;color:var(--mute);font-weight:500;margin-left:4px}
+  .pnl .val.pos{color:var(--green)}
+  .pnl .val.neg{color:var(--red)}
+  .pnl .hint{color:var(--mute);font-size:11.5px;margin-top:6px;line-height:1.4}
+  .filters{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+  .filters .label{color:var(--mute);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-right:6px}
+  .chip{background:var(--panel);border:1px solid var(--line);color:var(--text);padding:5px 12px;border-radius:7px;font-family:var(--mono);font-size:11.5px;cursor:pointer;transition:all 0.12s}
+  .chip:hover{border-color:var(--accent)}
+  .chip.active{background:var(--accent);color:#0a0a0c;border-color:var(--accent);font-weight:700}
+  .search{background:var(--panel);border:1px solid var(--line);color:var(--text);padding:7px 12px;border-radius:7px;font-family:var(--mono);font-size:12px;width:200px}
+  .search:focus{outline:none;border-color:var(--accent)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:14px}
+  .card h2{font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:var(--mute);margin:0 0 14px;font-weight:700;display:flex;align-items:baseline;gap:8px;justify-content:space-between}
+  .card h2 .count{color:var(--accent);font-family:var(--mono);font-weight:600}
+  .card h2 .right{font-family:var(--mono);font-size:11px;color:var(--mute);font-weight:500;letter-spacing:0}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  thead th{text-align:left;color:var(--mute);font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;padding:7px 8px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:1;cursor:pointer;user-select:none}
+  thead th:hover{color:var(--text)}
+  thead th.num{text-align:right}
+  tbody td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle}
+  tbody td.num{text-align:right;font-family:var(--mono)}
+  tbody tr:hover{background:rgba(240,185,11,0.04)}
+  tbody tr.totals{background:rgba(240,185,11,0.08);font-weight:700;border-top:2px solid var(--accent)}
+  .mono{font-family:var(--mono);font-size:12px}
+  .small{color:var(--mute);font-size:11px}
+  .asset{display:inline-flex;align-items:center;gap:4px;font-weight:700;font-family:var(--mono);font-size:10.5px;padding:2px 7px;border-radius:5px;background:rgba(240,185,11,0.12);color:var(--accent);letter-spacing:0.02em}
+  .asset.BTC{background:rgba(247,147,26,0.14);color:#f7931a}
+  .asset.ETH{background:rgba(98,126,234,0.14);color:#8aa1ff}
+  .asset.BNB{background:rgba(240,185,11,0.14);color:var(--accent)}
+  .asset.XRP{background:rgba(255,255,255,0.08);color:#fff}
+  .asset.ADA{background:rgba(0,114,206,0.18);color:#56a8ff}
+  .asset.SOL{background:rgba(157,73,247,0.18);color:#c39cff}
+  .asset.DOGE{background:rgba(195,154,69,0.18);color:#e6c177}
+  .asset.SHIB{background:rgba(255,140,80,0.18);color:#ffb074}
+  .asset.AVAX{background:rgba(232,65,66,0.18);color:#ff7878}
+  .asset.USDT,.asset.BUSD,.asset.USDC{background:rgba(0,194,138,0.16);color:#2dd4a3}
+  .asset.IOST{background:rgba(150,150,200,0.16);color:#bfbfeb}
+  .asset.OGN{background:rgba(138,138,180,0.18);color:#bbb}
+  .asset.CRO{background:rgba(18,157,255,0.18);color:#129DFF}
+  .platform{display:inline-block;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:600;font-family:var(--mono);letter-spacing:0.02em}
+  .platform.binance{background:rgba(240,185,11,0.15);color:#f0b90b}
+  .platform.crypto-com{background:rgba(18,157,255,0.16);color:#129DFF}
+  .platform.rakuten{background:rgba(191,0,0,0.16);color:#ff7878}
+  .pos{color:var(--green)} .neg{color:var(--red)}
+  .scroll{max-height:600px;overflow:auto}
+  .scroll::-webkit-scrollbar{width:6px}
+  .scroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+  .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:14px}
+  .sum{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:11px 13px}
+  .sum .asset{margin-bottom:6px}
+  .sum .lines{display:grid;grid-template-columns:auto 1fr;column-gap:8px;row-gap:2px;font-size:11.5px}
+  .sum .lines b{font-family:var(--mono);text-align:right}
+  .sum .lines span{color:var(--mute)}
+  .footer{margin-top:24px;color:var(--mute);font-size:12px;line-height:1.7;border-top:1px solid var(--line);padding-top:18px}
+  @media (max-width:1100px){.pnl-grid{grid-template-columns:repeat(2,1fr)}}
+  @media (max-width:680px){body{padding:16px 12px} h1{font-size:18px}.meta{text-align:left}.pnl-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<a class="back" href="index.html">← Asset Dashboard</a>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">∑</div>
+    <div>
+      <h1>All Crypto Purchases</h1>
+      <div class="sub">Every buy across Binance · Crypto.com · Rakuten Wallet — sortable, filterable</div>
+    </div>
+  </div>
+  <div class="meta">
+    <b id="totalRows">—</b> purchases tracked<br>
+    Updated <b>2026-06-04</b><br>
+    Prices: <span id="priceList" class="mono"></span>
+  </div>
+</header>
+
+<div class="pnl-grid">
+  <div class="pnl gold"><label>Total USD spent</label><div class="val" id="kpiSpent"></div><div class="hint">Lifetime fiat-equivalent into all buys</div></div>
+  <div class="pnl"><label>Total current value</label><div class="val" id="kpiValue"></div><div class="hint">At today's spot prices (rough)</div></div>
+  <div class="pnl"><label>Total P&L</label><div class="val" id="kpiPnl"></div><div class="hint" id="kpiPnlPct"></div></div>
+  <div class="pnl green"><label>BTC accumulated</label><div class="val" id="kpiBtc"></div><div class="hint" id="kpiBtcCost"></div></div>
+  <div class="pnl blue"><label>Other assets</label><div class="val" id="kpiAssets"></div><div class="hint">ETH, SOL, ADA, DOGE, BNB, etc.</div></div>
+</div>
+
+<div class="card">
+  <h2>Per-asset summary <span class="right" id="assetCount"></span></h2>
+  <div class="summary" id="assetSummary"></div>
+</div>
+
+<div class="filters" id="filters">
+  <span class="label">Asset:</span>
+  <button class="chip active" data-asset="all">All</button>
+  <button class="chip" data-asset="BTC">BTC</button>
+  <button class="chip" data-asset="ETH">ETH</button>
+  <button class="chip" data-asset="BNB">BNB</button>
+  <button class="chip" data-asset="SOL">SOL</button>
+  <button class="chip" data-asset="ADA">ADA</button>
+  <button class="chip" data-asset="DOGE">DOGE</button>
+  <button class="chip" data-asset="XRP">XRP</button>
+  <button class="chip" data-asset="AVAX">AVAX</button>
+  <button class="chip" data-asset="stable">Stablecoins</button>
+  <span class="label" style="margin-left:14px">Platform:</span>
+  <button class="chip active" data-platform="all">All</button>
+  <button class="chip" data-platform="binance">Binance</button>
+  <button class="chip" data-platform="crypto-com">Crypto.com</button>
+  <button class="chip" data-platform="rakuten">Rakuten</button>
+  <input type="text" class="search" placeholder="Search…" id="search" style="margin-left:auto">
+</div>
+
+<div class="card">
+  <h2>All purchases <span class="count" id="rowCount">—</span> <span class="right">Sort: click column header · Currency normalized to USD</span></h2>
+  <div class="scroll">
+    <table id="mainTable">
+      <thead>
+        <tr>
+          <th data-sort="date">Date</th>
+          <th data-sort="platform">Platform</th>
+          <th data-sort="asset">Asset</th>
+          <th data-sort="qty" class="num">Quantity</th>
+          <th data-sort="price" class="num">Price/unit (USD)</th>
+          <th data-sort="usdSpent" class="num">Spent (USD)</th>
+          <th data-sort="curValue" class="num">Now (USD)</th>
+          <th data-sort="pnl" class="num">P&L</th>
+          <th>Note</th>
+        </tr>
+      </thead>
+      <tbody id="mainBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="footer">
+  <p><b>Notes.</b> Spent (USD) converts JPY at 110¥/$ for 2021 trades, 150¥/$ for 2024+. USDT/USDC/BUSD = 1:1 with USD. "Now (USD)" uses today's approximate spot prices in the header. Stablecoin spend NOT counted toward "Total USD spent" KPI (you didn't gain/lose buying stablecoins). Internal swaps (USDT→BTC, USDC→ETH, OGN→BTC) shown as buys with cost basis from the input asset.</p>
+  <p><b>Missing.</b> Coincheck (separate inbox), Bybit (XRP/TRUMP only, no major BTC buys), BitOasis (no purchases yet), Simple Earn yields and airdrop receipts (free crypto, not buys).</p>
+</div>
+
+<script>
+const PRICE = {
+  BTC:65000, ETH:3150, BNB:580, XRP:2.20, ADA:0.45, SOL:140,
+  DOGE:0.30, AVAX:23, SHIB:0.0000175,
+  USDT:1, USDC:1, BUSD:1, IOST:0.005, OGN:0.10, CRO:0.10
+};
+function jpyToUsd(jpy, date){
+  const y = parseInt(date.slice(0,4));
+  return jpy / (y <= 2022 ? 110 : 150);
+}
+const PURCHASES = [
+  ["2021-02-26","binance","XRP",34.1,"JPY",1700,"Card ***2987"],
+  ["2021-02-27","binance","DOGE",274,"USD",15,"Card ***2987"],
+  ["2021-02-28","binance","BNB",0.12,"JPY",3000,"Card ***2987"],
+  ["2021-02-28","binance","BUSD",90.16,"JPY",10000,"Card ***2987"],
+  ["2021-02-28","binance","BUSD",90.16,"JPY",10000,"Card ***2987"],
+  ["2021-03-04","binance","USDT",89.28,"JPY",10000,"Card ***2987"],
+  ["2021-03-15","binance","DOGE",845,"USD",50,"Card ***2987"],
+  ["2021-04-17","binance","DOGE",171,"USD",50,"Card ***2987"],
+  ["2021-04-17","binance","BTC",0.002183,"JPY",15000,"Card ***2987"],
+  ["2021-05-05","binance","DOGE",21.9,"USD",15,"Card ***2987"],
+  ["2021-05-07","binance","DOGE",797.2,"USD",500,"Card ***6877"],
+  ["2021-05-13","binance","ADA",51.5,"USD",100,"Card ***2987"],
+  ["2021-05-13","binance","SHIB",2353299,"USD",50,"Card ***2987"],
+  ["2021-05-19","binance","ETH",0.15981,"JPY",50000,"Card ***6877"],
+  ["2021-05-19","binance","BTC",0.012413,"USD",500,"Card ***6877"],
+  ["2021-05-19","binance","BNB",0.4421,"JPY",20000,"Card ***6877"],
+  ["2021-05-21","binance","ADA",112.91,"USD",200,"Card ***6877"],
+  ["2021-02-27","binance","BTC",0.00009919,"USD",0.099,"DOGE→BTC swap"],
+  ["2021-02-28","binance","BTC",0.002054,"USD",89.97,"BTCBUSD spot"],
+  ["2021-03-04","binance","IOST",1882.2,"USD",89.44,"IOSTBUSD spot"],
+  ["2021-03-04","binance","OGN",30,"USD",15.288,"OGNUSDT spot"],
+  ["2021-03-04","binance","OGN",30.07,"USD",15.318,"OGNUSDT spot"],
+  ["2021-03-05","binance","IOST",1387,"USD",58.65,"IOSTUSDT spot"],
+  ["2021-04-09","binance","BTC",0.00118668,"USD",6.4,"OGN→BTC sell (22 OGN)"],
+  ["2021-04-09","binance","BTC",0.00210366,"USD",11.7,"OGN→BTC sell (39 OGN)"],
+  ["2021-09-20","binance","SOL",1.37,"USD",198.65,"SOL @ $145"],
+  ["2021-09-21","binance","BTC",0.0117,"USD",499.97,"BTC @ $42,732"],
+  ["2021-09-21","binance","SOL",0.26,"USD",33.8,"SOL @ $130"],
+  ["2021-09-21","binance","SOL",0.89,"USD",115.7,"SOL @ $130"],
+  ["2021-09-21","binance","AVAX",3.63,"USD",199.65,"AVAX @ $55"],
+  ["2021-09-22","binance","BTC",0.00456,"USD",182.80,"BTC @ $40,088"],
+  ["2021-09-23","binance","XRP",251,"USD",249.80,"XRP @ $0.9952"],
+  ["2021-10-28","binance","BTC",0.00344,"USD",199.52,"BTC @ $58,000"],
+  ["2021-11-17","binance","ETH",0.1302,"USD",551.99,"ETH @ $4,239"],
+  ["2025-01-27","binance","BTC",0.00063,"JPY",9987.08,"BTCJPY @ ¥15.85M"],
+  ["2025-01-29","binance","BTC",0.012766,"JPY",202379.87,"BTCJPY @ ¥15.85M"],
+  ["2025-01-29","binance","BTC",0.007245,"JPY",114859.81,"BTCJPY @ ¥15.85M"],
+  ["2025-01-29","binance","BTC",0.021,"JPY",332917.12,"BTCJPY @ ¥15.85M"],
+  ["2025-01-29","binance","BTC",0.047919,"JPY",759685.16,"BTCJPY @ ¥15.85M"],
+  ["2025-01-29","binance","BTC",0.005687,"JPY",90157.13,"BTCJPY @ ¥15.85M"],
+  ["2025-02-03","binance","BTC",0.024781,"JPY",360386.49,"BTCJPY @ ¥14.54M"],
+  ["2025-02-03","binance","BTC",0.014479,"JPY",210567.72,"BTCJPY @ ¥14.54M"],
+  ["2025-02-03","binance","BTC",0.001997,"JPY",29042.08,"BTCJPY @ ¥14.54M"],
+  ["2025-03-07","binance","BTC",0.058,"JPY",775228.81,"BTCJPY @ ¥13.37M"],
+  ["2025-03-07","binance","BTC",0.009334,"JPY",124758.38,"BTCJPY @ ¥13.37M"],
+  ["2025-10-30","binance","BTC",0.005,"JPY",82328.40,"BTCJPY @ ¥16.47M"],
+  ["2025-10-30","binance","BTC",0.000007,"JPY",115.26,"BTCJPY @ ¥16.47M"],
+  ["2025-10-30","binance","BTC",0.005,"JPY",82333.98,"BTCJPY @ ¥16.47M"],
+  ["2025-10-30","binance","BTC",0.032493,"JPY",535100.44,"BTCJPY @ ¥16.47M"],
+  ["2025-10-30","binance","BTC",0.003036,"JPY",49993.20,"BTCJPY @ ¥16.47M"],
+  ["2025-10-30","binance","BTC",0.000007,"JPY",115.27,"BTCJPY @ ¥16.47M"],
+  ["2025-11-04","binance","BTC",0.015508,"JPY",249987.49,"BTCJPY @ ¥16.12M"],
+  ["2025-11-04","binance","BTC",0.003109,"JPY",49991.54,"BTCJPY @ ¥16.08M"],
+  ["2025-11-04","binance","BTC",0.006464,"JPY",99993.92,"BTCJPY @ ¥15.47M"],
+  ["2025-11-13","binance","BTC",0.017461,"JPY",272179.89,"BTCJPY @ ¥15.59M"],
+  ["2025-11-13","binance","BTC",0.004992,"JPY",77814.67,"BTCJPY @ ¥15.59M"],
+  ["2025-11-21","binance","BTC",0.000015,"JPY",205.48,"BTCJPY @ ¥13.70M"],
+  ["2025-11-21","binance","BTC",0.008,"JPY",109587.93,"BTCJPY @ ¥13.70M"],
+  ["2025-11-21","binance","BTC",0.013967,"JPY",191368.29,"BTCJPY @ ¥13.70M"],
+  ["2025-11-21","binance","BTC",0.0072,"JPY",98629.14,"BTCJPY @ ¥13.70M"],
+  ["2025-11-21","binance","BTC",0.00001,"JPY",137.00,"BTCJPY @ ¥13.70M"],
+  ["2025-11-21","binance","BTC",0.00001,"JPY",136.97,"BTCJPY @ ¥13.70M"],
+  ["2026-01-31","binance","BTC",0.013079,"JPY",158646.09,"BTCJPY @ ¥12.13M"],
+  ["2026-01-31","binance","BTC",0.023195,"JPY",281351.48,"BTCJPY @ ¥12.13M"],
+  ["2026-02-03","binance","BTC",0.037825,"JPY",439996.10,"BTCJPY @ ¥11.63M"],
+  ["2021-09-15","crypto-com","CRO",1000,"USD",189.93,"First buy ever"],
+  ["2021-09-15","crypto-com","USDC",250,"USD",250.00,""],
+  ["2021-09-15","crypto-com","ADA",388,"USD",976.93,"Withdrawn to Binance"],
+  ["2021-09-17","crypto-com","AVAX",2.9,"USD",192.95,"Withdrawn to Binance"],
+  ["2021-09-20","crypto-com","USDT",500,"USD",505.01,"Withdrawn to Binance"],
+  ["2021-09-20","crypto-com","USDT",10,"USD",10.07,""],
+  ["2021-09-20","crypto-com","USDT",1772.07,"USD",1793.31,"Withdrawn to Binance"],
+  ["2021-12-04","crypto-com","CRO",850,"USD",478.26,""],
+  ["2022-01-08","crypto-com","ETH",0.079145,"USD",256.15,"USDC→ETH @ $3,236"],
+  ["2022-01-24","crypto-com","SOL",5,"USD",464.81,"@ $92.96"],
+  ["2024-02-29","crypto-com","BTC",0.0120656,"USD",738.88,"USDT→BTC @ $62,224"],
+  ["2024-03-14","crypto-com","DOGE",1096.3,"USD",200.00,"Card ***6877 @ $0.182"],
+  ["2024-07-05","crypto-com","BTC",0.0179996,"USD",1000.00,"Card ***6877 @ $55,556"],
+  ["2024-08-06","crypto-com","BTC",0.0261176,"USD",1500.00,"Card ***6877 @ $57,432"],
+  ["2024-11-22","rakuten","BTC",0.00867479,"JPY",135937,"BTCJPY @ ¥15.67M"],
+  ["2024-11-22","rakuten","BTC",0.01182785,"JPY",185445,"BTCJPY @ ¥15.68M"],
+  ["2024-11-22","rakuten","BTC",0.00501228,"JPY",78618,"BTCJPY @ ¥15.69M"],
+  ["2024-12-20","rakuten","BTC",0.01168859,"JPY",180000,"BTCJPY @ ¥15.40M"],
+  ["2025-01-10","rakuten","BTC",0.02725271,"JPY",420000,"BTCJPY @ ¥15.41M"],
+];
+
+const STABLES = new Set(["USDT","USDC","BUSD"]);
+const rows = PURCHASES.map(([date,plat,asset,qty,cc,ca,note])=>{
+  const usdSpent = cc==="JPY" ? jpyToUsd(ca,date) : ca;
+  const price = qty>0 ? usdSpent/qty : 0;
+  const curValue = (PRICE[asset]||0) * qty;
+  const pnl = curValue - usdSpent;
+  return {date,platform:plat,asset,qty,cc,ca,usdSpent,price,curValue,pnl,note,isStable:STABLES.has(asset)};
+});
+
+const nonStable = rows.filter(r=>!r.isStable);
+const totalSpentAll = nonStable.reduce((s,r)=>s+r.usdSpent,0);
+const totalValueAll = nonStable.reduce((s,r)=>s+r.curValue,0);
+const totalPnl = totalValueAll - totalSpentAll;
+const totalPnlPct = totalPnl/totalSpentAll*100;
+const btcRows = rows.filter(r=>r.asset==="BTC");
+const totalBtc = btcRows.reduce((s,r)=>s+r.qty,0);
+const totalBtcCost = btcRows.reduce((s,r)=>s+r.usdSpent,0);
+const totalBtcValue = totalBtc * PRICE.BTC;
+const totalBtcPnl = totalBtcValue - totalBtcCost;
+const otherAssetsCount = new Set(nonStable.filter(r=>r.asset!=="BTC").map(r=>r.asset)).size;
+
+function fmt(n,d=0){
+  if (n==null||isNaN(n)) return "—";
+  if (Math.abs(n)>=1000) return n.toLocaleString("en-US",{maximumFractionDigits:d});
+  if (Math.abs(n)>=1) return n.toLocaleString("en-US",{maximumFractionDigits:Math.max(d,2)});
+  return n.toLocaleString("en-US",{maximumFractionDigits:8});
+}
+function usd(n){ return "$"+fmt(Math.abs(n),0); }
+
+const $ = s=>document.querySelector(s);
+function makeEl(tag,attrs,...kids){
+  const n=document.createElement(tag);
+  if (attrs) for (const [k,v] of Object.entries(attrs)){
+    if (k==='class') n.className=v;
+    else if (k==='text') n.textContent=v;
+    else n.setAttribute(k,v);
+  }
+  kids.forEach(k=>{if (k!=null) n.appendChild(typeof k==='string'||typeof k==='number'?document.createTextNode(String(k)):k)});
+  return n;
+}
+
+$('#kpiSpent').textContent = usd(totalSpentAll);
+$('#kpiValue').textContent = usd(totalValueAll);
+const kp = $('#kpiPnl');
+kp.textContent = (totalPnl>=0?"+":"-")+usd(totalPnl);
+kp.className = 'val '+(totalPnl>=0?'pos':'neg');
+$('#kpiPnlPct').textContent = (totalPnl>=0?"+":"")+totalPnlPct.toFixed(1)+"% on $"+fmt(totalSpentAll,0)+" cost basis";
+
+const kBtc = $('#kpiBtc');
+kBtc.textContent = '';
+kBtc.appendChild(document.createTextNode(fmt(totalBtc,5)+' '));
+kBtc.appendChild(makeEl('small',{text:'BTC'}));
+$('#kpiBtcCost').textContent = "Cost: "+usd(totalBtcCost)+" · Now: "+usd(totalBtcValue)+" · P&L "+(totalBtcPnl>=0?"+":"-")+usd(totalBtcPnl);
+$('#kpiAssets').textContent = otherAssetsCount;
+$('#totalRows').textContent = rows.length;
+
+const priceList = Object.entries({BTC:PRICE.BTC, ETH:PRICE.ETH, BNB:PRICE.BNB, SOL:PRICE.SOL, ADA:PRICE.ADA, DOGE:PRICE.DOGE}).map(([k,v])=>`${k}=$${fmt(v,0)}`).join(' · ');
+$('#priceList').textContent = priceList;
+
+const byAsset = {};
+nonStable.forEach(r=>{
+  if (!byAsset[r.asset]) byAsset[r.asset] = {qty:0,cost:0,buys:0};
+  byAsset[r.asset].qty += r.qty;
+  byAsset[r.asset].cost += r.usdSpent;
+  byAsset[r.asset].buys += 1;
+});
+const summary = $('#assetSummary');
+$('#assetCount').textContent = Object.keys(byAsset).length+' assets';
+
+Object.entries(byAsset).sort((a,b)=>b[1].cost-a[1].cost).forEach(([a,d])=>{
+  const value = d.qty * (PRICE[a]||0);
+  const pnl = value - d.cost;
+  const pnlPct = (pnl/d.cost*100);
+  const div = makeEl('div',{class:'sum'},
+    makeEl('span',{class:`asset ${a}`,text:a}),
+    makeEl('div',{class:'lines'},
+      makeEl('span',{text:'Qty'}), makeEl('b',{text:fmt(d.qty,a==='SHIB'?0:6)}),
+      makeEl('span',{text:'Buys'}), makeEl('b',{text:String(d.buys)}),
+      makeEl('span',{text:'Cost'}), makeEl('b',{text:usd(d.cost)}),
+      makeEl('span',{text:'Value'}), makeEl('b',{text:usd(value)}),
+      makeEl('span',{text:'P&L'}), makeEl('b',{class:pnl>=0?'pos':'neg',text:(pnl>=0?'+':'-')+usd(pnl)+` (${pnlPct>=0?'+':''}${pnlPct.toFixed(0)}%)`}),
+    )
+  );
+  summary.appendChild(div);
+});
+
+let sortKey = 'date'; let sortDir = -1;
+let assetFilter = 'all', platformFilter = 'all', searchText = '';
+
+function renderTable(){
+  const tbody = $('#mainBody');
+  tbody.replaceChildren();
+  const filtered = rows.filter(r=>{
+    if (assetFilter==='stable' && !r.isStable) return false;
+    if (assetFilter!=='all' && assetFilter!=='stable' && r.asset!==assetFilter) return false;
+    if (platformFilter!=='all' && r.platform!==platformFilter) return false;
+    if (searchText && !(`${r.date} ${r.asset} ${r.platform} ${r.note}`.toLowerCase().includes(searchText.toLowerCase()))) return false;
+    return true;
+  });
+  filtered.sort((a,b)=>{
+    let va=a[sortKey], vb=b[sortKey];
+    if (typeof va==='string') return sortDir*va.localeCompare(vb);
+    return sortDir*(va-vb);
+  });
+
+  filtered.forEach(r=>{
+    const pnlClass = r.isStable ? '' : (r.pnl>=0?'pos':'neg');
+    const platLabel = {binance:'Binance','crypto-com':'Crypto.com',rakuten:'Rakuten'}[r.platform];
+    tbody.appendChild(makeEl('tr',null,
+      makeEl('td',{class:'mono small',text:r.date}),
+      makeEl('td',null, makeEl('span',{class:`platform ${r.platform}`,text:platLabel})),
+      makeEl('td',null, makeEl('span',{class:`asset ${r.asset}`,text:r.asset})),
+      makeEl('td',{class:'num',text:fmt(r.qty,r.asset==='SHIB'?0:6)}),
+      makeEl('td',{class:'num',text:r.isStable?'—':'$'+fmt(r.price,2)}),
+      makeEl('td',{class:'num',text:'$'+fmt(r.usdSpent,2)}),
+      makeEl('td',{class:'num',text:r.isStable?'—':'$'+fmt(r.curValue,2)}),
+      makeEl('td',{class:`num ${pnlClass}`,text:r.isStable?'—':((r.pnl>=0?'+':'-')+'$'+fmt(Math.abs(r.pnl),0))}),
+      makeEl('td',{class:'small',text:r.note}),
+    ));
+  });
+
+  const f = filtered.filter(r=>!r.isStable);
+  const tCost = f.reduce((s,r)=>s+r.usdSpent,0);
+  const tValue = f.reduce((s,r)=>s+r.curValue,0);
+  const tPnl = tValue - tCost;
+  tbody.appendChild(makeEl('tr',{class:'totals'},
+    makeEl('td',{colspan:'3',text:`Totals (${filtered.length} rows, excl. stablecoins)`}),
+    makeEl('td',{class:'num',text:''}),
+    makeEl('td',{class:'num',text:''}),
+    makeEl('td',{class:'num',text:'$'+fmt(tCost,0)}),
+    makeEl('td',{class:'num',text:'$'+fmt(tValue,0)}),
+    makeEl('td',{class:`num ${tPnl>=0?'pos':'neg'}`,text:(tPnl>=0?'+':'-')+'$'+fmt(Math.abs(tPnl),0)}),
+    makeEl('td',null),
+  ));
+  $('#rowCount').textContent = filtered.length+' rows';
+}
+
+document.querySelectorAll('thead th[data-sort]').forEach(th=>{
+  th.addEventListener('click',()=>{
+    const key = th.dataset.sort;
+    if (sortKey===key) sortDir*=-1; else { sortKey=key; sortDir=-1; }
+    renderTable();
+  });
+});
+document.querySelectorAll('.chip[data-asset]').forEach(c=>c.addEventListener('click',()=>{
+  document.querySelectorAll('.chip[data-asset]').forEach(x=>x.classList.remove('active'));
+  c.classList.add('active');
+  assetFilter = c.dataset.asset;
+  renderTable();
+}));
+document.querySelectorAll('.chip[data-platform]').forEach(c=>c.addEventListener('click',()=>{
+  document.querySelectorAll('.chip[data-platform]').forEach(x=>x.classList.remove('active'));
+  c.classList.add('active');
+  platformFilter = c.dataset.platform;
+  renderTable();
+}));
+$('#search').addEventListener('input',e=>{ searchText=e.target.value; renderTable(); });
+
+renderTable();
+</script>
+</body>
+</html>
