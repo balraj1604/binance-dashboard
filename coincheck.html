@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Coincheck — Activity Dashboard</title>
+<style>
+  :root{
+    --bg:#0a0a0c; --panel:#13131a; --panel2:#1b1b25; --line:#26263a;
+    --text:#e9e9f1; --mute:#8a8aa3;
+    --coincheck:#36486b;
+    --green:#22c55e; --red:#ef4444; --blue:#3b82f6; --amber:#f59e0b; --gold:#f7931a;
+    --mono:'JetBrains Mono', SFMono-Regular, ui-monospace, monospace;
+    --sans:-apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.5}
+  body{min-height:100vh;padding:32px 28px 80px;max-width:1400px;margin:0 auto}
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:24px;margin-bottom:22px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand-mark{width:34px;height:34px;background:var(--coincheck);border-radius:8px;display:grid;place-items:center;color:#fff;font-weight:900;font-family:var(--mono);font-size:18px}
+  h1{font-size:24px;font-weight:700;margin:0;letter-spacing:-0.01em}
+  .sub{color:var(--mute);font-size:13px;margin-top:2px}
+  .meta{font-family:var(--mono);font-size:12px;color:var(--mute);text-align:right}
+  .meta b{color:var(--text);font-weight:500}
+  .ver{display:inline-block;font-family:var(--mono);font-size:10px;background:rgba(245,158,11,0.18);color:var(--amber);padding:2px 7px;border-radius:5px;letter-spacing:0.04em;margin-left:8px;vertical-align:middle}
+  .back{color:var(--mute);text-decoration:none;font-family:var(--mono);font-size:12px;display:inline-block;margin-bottom:8px}
+  .back:hover{color:var(--text)}
+
+  .alert{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:13px;line-height:1.6}
+  .alert b{color:var(--amber)}
+  .alert.critical{background:rgba(239,68,68,0.08);border-color:rgba(239,68,68,0.3)}
+  .alert.critical b{color:var(--red)}
+
+  .balance-card{background:linear-gradient(135deg,rgba(54,72,107,0.18),rgba(54,72,107,0.04));border:1px solid rgba(54,72,107,0.4);border-radius:14px;padding:22px 24px;margin-bottom:22px}
+  .balance-card h2{color:#8a9fc4;margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;font-weight:700}
+  .balance-card .lead{font-family:var(--mono);font-size:18px;font-weight:700;letter-spacing:-0.01em;line-height:1.4}
+  .balance-card .lead small{font-size:13px;color:var(--mute);font-weight:500;display:block;margin-top:6px;line-height:1.5}
+  .recon{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px;font-size:12px}
+  .recon div{padding:10px 12px;background:rgba(255,255,255,0.03);border-radius:8px;border-left:3px solid var(--coincheck)}
+  .recon div.in{border-left-color:var(--green)}
+  .recon div.out{border-left-color:var(--red)}
+  .recon div.net{border-left-color:var(--blue)}
+  .recon span{display:block;color:var(--mute);font-size:11px;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em}
+  .recon b{font-family:var(--mono);font-weight:700;font-size:15px}
+
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;position:relative;overflow:hidden}
+  .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--coincheck)}
+  .kpi.green::before{background:var(--green)}
+  .kpi.red::before{background:var(--red)}
+  .kpi.amber::before{background:var(--amber)}
+  .kpi.gold::before{background:var(--gold)}
+  .kpi label{display:block;color:var(--mute);font-size:11px;text-transform:uppercase;letter-spacing:0.07em;font-weight:600;margin-bottom:6px}
+  .kpi .val{font-family:var(--mono);font-size:20px;font-weight:700;letter-spacing:-0.02em}
+  .kpi .val small{font-size:12px;color:var(--mute);font-weight:500;margin-left:6px}
+  .kpi .hint{color:var(--mute);font-size:11.5px;margin-top:6px}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:14px}
+  .card h2{font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:var(--mute);margin:0 0 14px;font-weight:700;display:flex;align-items:baseline;gap:8px}
+  .card h2 .count{color:#8a9fc4;font-family:var(--mono);font-weight:600}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  thead th{text-align:left;color:var(--mute);font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;padding:7px 8px;border-bottom:1px solid var(--line);background:var(--panel)}
+  tbody td{padding:9px 8px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle}
+  tbody tr:hover{background:rgba(54,72,107,0.08)}
+  .mono{font-family:var(--mono);font-size:12px}
+  .small{color:var(--mute);font-size:11px}
+  .asset{display:inline-flex;align-items:center;gap:4px;font-weight:700;font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:5px;letter-spacing:0.02em}
+  .asset.JPY{background:rgba(0,194,138,0.16);color:#2dd4a3}
+  .asset.IOST{background:rgba(150,150,200,0.16);color:#bfbfeb}
+  .asset.BTC{background:rgba(247,147,26,0.14);color:#f7931a}
+  .asset.ETH{background:rgba(98,126,234,0.14);color:#8aa1ff}
+  .asset.FNCT{background:rgba(167,139,250,0.18);color:#c4b5fd}
+  .asset.SAND,.asset.LAND{background:rgba(232,65,66,0.18);color:#ff7878}
+  .pill{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;font-family:var(--mono);margin-left:4px}
+  .pill.in{background:rgba(34,197,94,0.15);color:var(--green)}
+  .pill.out{background:rgba(239,68,68,0.15);color:var(--red)}
+  .pill.buy{background:rgba(240,185,11,0.18);color:#f0b90b}
+  .pill.link{background:rgba(240,185,11,0.18);color:#f0b90b}
+
+  .footer{margin-top:24px;color:var(--mute);font-size:12px;line-height:1.7;border-top:1px solid var(--line);padding-top:18px}
+  .footer b{color:var(--text)}
+  .footer p{margin:0 0 8px}
+  .footer ul{margin:6px 0 12px;padding-left:20px}
+
+  @media (max-width:1100px){.kpi-grid,.recon{grid-template-columns:repeat(2,1fr)}}
+  @media (max-width:680px){body{padding:16px 12px}.kpi-grid,.recon{grid-template-columns:1fr} h1{font-size:18px} .meta{text-align:left}}
+</style>
+</head>
+<body>
+
+<a class="back" href="index.html">← Asset Dashboard</a>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">C</div>
+    <div>
+      <h1>Coincheck Activity Dashboard<span class="ver">v1 · partial (2021 only)</span></h1>
+      <div class="sub">Built from 2021 tax CSV + email signals · need 2022-2025 CSVs for full picture</div>
+    </div>
+  </div>
+  <div class="meta">
+    Account opened <b>pre-2021</b> (email-migrated)<br>
+    Last activity <b>~2024</b> (per email)<br>
+    <b>4 transactions in 2021</b>
+  </div>
+</header>
+
+<div class="alert critical">
+  <b>⚠ Two pending compliance items.</b><br>
+  1. <b>2023-12-12:</b> Coincheck flagged your foreign-resident 在留カード (residence card) as expired and requested update. <br>
+  2. <b>2026-01-06:</b> CARF (Crypto-Asset Reporting Framework) tax residency declaration required for your Dubai residency. <br>
+  Both must be resolved before withdrawals are likely to clear.
+</div>
+
+<div class="balance-card">
+  <h2>2021 activity summary</h2>
+  <div class="lead">
+    Used Coincheck purely as a <b>JPY → IOST onramp to Binance</b>. ¥5,000 deposit → 1,094.8 IOST → all sent to Binance.
+    <small>Zero IOST left on Coincheck at end of 2021. Activity in 2022-2025 needs the additional tax CSVs to confirm.</small>
+  </div>
+  <div class="recon">
+    <div class="in"><span>JPY deposited (2021)</span><b>¥5,000</b></div>
+    <div class="net"><span>Total JPY out (fees)</span><b>¥770</b></div>
+    <div class="net"><span>Crypto bought</span><b>1,094.8 IOST</b></div>
+    <div class="out"><span>Crypto withdrawn</span><b>1,092.8 IOST → Binance</b></div>
+  </div>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi"><label>Account age</label><div class="val">~5+ years</div><div class="hint">Originally on balrajmoney@ then migrated to balrajcrypto@ Feb 2021</div></div>
+  <div class="kpi green"><label>2021 fiat in</label><div class="val">¥5,000</div><div class="hint">+ ¥770 deposit fee = ¥5,770</div></div>
+  <div class="kpi gold"><label>IOST transferred to Binance</label><div class="val">1,092.8 <small>IOST</small></div><div class="hint">100 + 992.8 = matches Binance deposits exactly</div></div>
+  <div class="kpi amber"><label>End-2021 balance</label><div class="val">~0</div><div class="hint">All IOST withdrawn, 2 IOST in network fees</div></div>
+</div>
+
+<div class="card">
+  <h2>2021 transactions (tax CSV) <span class="count">4 events</span></h2>
+  <table>
+    <thead><tr><th>Date (JST)</th><th>Type</th><th>Pair</th><th class="mono">Amount</th><th class="mono">Price/Rate</th><th>Fee</th><th>Destination/Note</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="mono small">2021-02-26 20:47</td>
+        <td><span class="pill in">Deposit</span></td>
+        <td><span class="asset JPY">JPY</span></td>
+        <td class="mono">+¥5,000</td>
+        <td class="mono small">—</td>
+        <td class="mono small">¥770 (convenience store)</td>
+        <td class="small">Convenience store deposit</td>
+      </tr>
+      <tr>
+        <td class="mono small">2021-02-26 21:14</td>
+        <td><span class="pill buy">Buy</span></td>
+        <td>IOST/JPY</td>
+        <td class="mono">+1,094.8 <span class="asset IOST">IOST</span></td>
+        <td class="mono">¥4.567/IOST</td>
+        <td class="mono small">0</td>
+        <td class="small">Spent ¥5,000 JPY · Trade ID 12998028769</td>
+      </tr>
+      <tr>
+        <td class="mono small">2021-03-04 22:36</td>
+        <td><span class="pill out">Send</span> <span class="pill link">→ Binance</span></td>
+        <td><span class="asset IOST">IOST</span></td>
+        <td class="mono">-100 IOST</td>
+        <td class="mono small">—</td>
+        <td class="mono small">1 IOST</td>
+        <td class="small">Address label: <b>binanceiost</b></td>
+      </tr>
+      <tr>
+        <td class="mono small">2021-03-06 15:27</td>
+        <td><span class="pill out">Send</span> <span class="pill link">→ Binance</span></td>
+        <td><span class="asset IOST">IOST</span></td>
+        <td class="mono">-992.8 IOST</td>
+        <td class="mono small">—</td>
+        <td class="mono small">1 IOST</td>
+        <td class="small">Address: <b>binanceiost</b></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h2>Cross-platform trail · Coincheck → Binance <span class="count">100% confirmed</span></h2>
+  <table>
+    <thead><tr><th>Date</th><th>Coincheck send</th><th>Binance receive</th><th>Fee</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="mono small">2021-03-04 → 2021-03-04</td>
+        <td class="mono">100 IOST sent at 22:36 JST</td>
+        <td class="mono">100 IOST received at 22:36 JST</td>
+        <td class="mono small">1 IOST (Coincheck fee)</td>
+      </tr>
+      <tr>
+        <td class="mono small">2021-03-06 → 2021-03-06</td>
+        <td class="mono">992.8 IOST sent at 15:27 JST</td>
+        <td class="mono">992.8 IOST received at 15:27 JST</td>
+        <td class="mono small">1 IOST (Coincheck fee)</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="small" style="margin-top:10px">Amounts match exactly — confirms <b>Coincheck was the source of the IOST that arrived at Binance in March 2021</b>. (The Sep 2021 ADA/AVAX/USDT batch came from Crypto.com — different source.)</div>
+</div>
+
+<div class="card">
+  <h2>Email signals from 2022-2025 (unconfirmed amounts) <span class="count">need CSVs</span></h2>
+  <table>
+    <thead><tr><th>Date</th><th>Signal</th><th>Likely event</th></tr></thead>
+    <tbody>
+      <tr><td class="mono small">2022 onwards</td><td>The Sandbox LAND campaign barrage targeted at you</td><td>Possibly NFT purchases (LAND, MAYC, Meebits) on Coincheck NFT β</td></tr>
+      <tr><td class="mono small">2023-02 to 2023-03</td><td>FNCT IEO campaigns targeted at you</td><td>Possibly subscribed to FNCT IEO (¥10.66B raised, 18.78× oversubscribed)</td></tr>
+      <tr><td class="mono small">2023-12-12</td><td>在留カード expiry KYC notice</td><td>Foreign-resident status flagged</td></tr>
+      <tr><td class="mono small">2024-01-17/19</td><td>"2023 tax CSV apology" emails</td><td>You had trades in 2023</td></tr>
+      <tr><td class="mono small">2024-06-20</td><td>CSV format change announcement</td><td>You're on the active-trader list</td></tr>
+      <tr><td class="mono small">2024-07-05</td><td>2FA disabled (then no event after)</td><td>Last active session signal</td></tr>
+      <tr><td class="mono small">2025-05-22 & 2026-04-06</td><td>"Check asset status" reminders</td><td>You still hold positive balance today</td></tr>
+      <tr><td class="mono small">2026-01-06</td><td>CARF tax residency request</td><td>Coincheck needs UAE residency declaration</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="footer">
+  <p><b>What's confirmed:</b> 4 transactions in 2021 (1 deposit + 1 buy + 2 withdrawals). Coincheck was your IOST onramp to Binance.</p>
+  <p><b>What we don't know yet:</b> 2022, 2023, 2024, 2025 trades. Per the May 2025 + April 2026 "check balance" emails, you still hold something on Coincheck. Per the 2023 tax CSV apology emails, you definitely traded in 2023 (possibly FNCT IEO + The Sandbox LAND NFTs).</p>
+  <p><b>To unlock the rest:</b> Inside Coincheck → 取引履歴 → 年間取引履歴のダウンロード → download 2022, 2023, 2024, 2025 → drop here. Same workflow as Rakuten Wallet.</p>
+  <p><b>Pending compliance:</b> Resolve the 在留カード expiry + submit CARF UAE tax residency declaration before attempting withdrawals.</p>
+</div>
+
+</body>
+</html>
