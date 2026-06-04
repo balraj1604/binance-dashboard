@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Crypto.com — Personal Activity Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<style>
+  :root{
+    --bg:#0a0a0c; --panel:#13131a; --panel2:#1b1b25; --line:#26263a;
+    --text:#e9e9f1; --mute:#8a8aa3;
+    --accent:#0a2540; --accent2:#129DFF;
+    --green:#22c55e; --red:#ef4444; --blue:#3b82f6; --gold:#f7931a;
+    --mono:'JetBrains Mono', SFMono-Regular, ui-monospace, monospace;
+    --sans:-apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.5}
+  body{min-height:100vh;padding:32px 28px 80px;max-width:1400px;margin:0 auto}
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:24px;margin-bottom:28px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand-mark{width:34px;height:34px;background:linear-gradient(135deg,#0a2540,#129DFF);border-radius:8px;display:grid;place-items:center;color:#fff;font-weight:900;font-family:var(--mono);font-size:18px}
+  h1{font-size:24px;font-weight:700;margin:0;letter-spacing:-0.01em}
+  .sub{color:var(--mute);font-size:13px;margin-top:2px}
+  .meta{font-family:var(--mono);font-size:12px;color:var(--mute);text-align:right}
+  .meta b{color:var(--text);font-weight:500}
+  .ver{display:inline-block;font-family:var(--mono);font-size:10px;background:rgba(18,157,255,0.16);color:var(--accent2);padding:2px 7px;border-radius:5px;letter-spacing:0.04em;margin-left:8px;vertical-align:middle}
+  .back{color:var(--mute);text-decoration:none;font-family:var(--mono);font-size:12px;display:inline-block;margin-bottom:8px}
+  .back:hover{color:var(--text)}
+  .balance-card{background:linear-gradient(135deg,rgba(18,157,255,0.08),rgba(10,37,64,0.16));border:1px solid rgba(18,157,255,0.3);border-radius:14px;padding:22px 24px;margin-bottom:22px}
+  .balance-card h2{color:var(--accent2);margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;font-weight:700}
+  .balance-card .lead{font-family:var(--mono);font-size:22px;font-weight:700;letter-spacing:-0.01em;line-height:1.3}
+  .balance-card .lead small{font-size:13px;color:var(--mute);font-weight:500;margin-left:6px;display:block;margin-top:4px}
+  .recon{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px;font-size:12px}
+  .recon div{padding:10px 12px;background:rgba(255,255,255,0.03);border-radius:8px;border-left:3px solid var(--accent2)}
+  .recon div.in{border-left-color:var(--green)}
+  .recon div.out{border-left-color:var(--red)}
+  .recon div.net{border-left-color:var(--blue)}
+  .recon span{display:block;color:var(--mute);font-size:11px;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em}
+  .recon b{font-family:var(--mono);font-weight:700;font-size:15px}
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;position:relative;overflow:hidden}
+  .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent2)}
+  .kpi.green::before{background:var(--green)}
+  .kpi.gold::before{background:var(--gold)}
+  .kpi.red::before{background:var(--red)}
+  .kpi label{display:block;color:var(--mute);font-size:11px;text-transform:uppercase;letter-spacing:0.07em;font-weight:600;margin-bottom:6px}
+  .kpi .val{font-family:var(--mono);font-size:22px;font-weight:700;letter-spacing:-0.02em}
+  .kpi .val small{font-size:13px;color:var(--mute);font-weight:500;margin-left:6px}
+  .kpi .hint{color:var(--mute);font-size:11.5px;margin-top:6px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+  .row.wide{grid-template-columns:1.5fr 1fr}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+  .card h2{font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:var(--mute);margin:0 0 14px;font-weight:700;display:flex;align-items:baseline;gap:8px}
+  .card h2 .count{color:var(--accent2);font-family:var(--mono);font-weight:600}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  thead th{text-align:left;color:var(--mute);font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;padding:7px 8px;border-bottom:1px solid var(--line);background:var(--panel)}
+  tbody td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle}
+  tbody tr:hover{background:rgba(18,157,255,0.04)}
+  .mono{font-family:var(--mono);font-size:12px}
+  .small{color:var(--mute);font-size:11px}
+  .asset{display:inline-flex;align-items:center;gap:4px;font-weight:700;font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:5px;background:rgba(18,157,255,0.12);color:var(--accent2);letter-spacing:0.02em}
+  .asset.BTC{background:rgba(247,147,26,0.14);color:#f7931a}
+  .asset.ETH{background:rgba(98,126,234,0.14);color:#8aa1ff}
+  .asset.SOL{background:rgba(157,73,247,0.18);color:#c39cff}
+  .asset.DOGE{background:rgba(195,154,69,0.18);color:#e6c177}
+  .asset.USDT{background:rgba(0,194,138,0.16);color:#2dd4a3}
+  .asset.USD{background:rgba(34,197,94,0.16);color:#22c55e}
+  .pill{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;font-family:var(--mono);margin-left:4px}
+  .pill.in{background:rgba(34,197,94,0.15);color:var(--green)}
+  .pill.out{background:rgba(239,68,68,0.15);color:var(--red)}
+  .pill.buy{background:rgba(240,185,11,0.18);color:#f0b90b}
+  .pill.sell{background:rgba(239,68,68,0.18);color:var(--red)}
+  .pill.link{background:rgba(18,157,255,0.18);color:var(--accent2)}
+  .chart-wrap{position:relative;height:280px}
+  .footer{margin-top:32px;color:var(--mute);font-size:12px;line-height:1.7;border-top:1px solid var(--line);padding-top:18px}
+  .footer b{color:var(--text)}
+  .footer p{margin:0 0 8px}
+  .footer ul{margin:6px 0 12px;padding-left:20px}
+  .alert{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:13px}
+  .alert b{color:var(--red)}
+  @media (max-width:1100px){
+    .recon,.kpi-grid{grid-template-columns:repeat(2,1fr)}
+    .row,.row.wide{grid-template-columns:1fr}
+  }
+  @media (max-width:680px){
+    body{padding:16px 12px}
+    .recon,.kpi-grid{grid-template-columns:1fr}
+    h1{font-size:18px}
+    .meta{text-align:left}
+  }
+</style>
+</head>
+<body>
+
+<a class="back" href="index.html">← Asset Dashboard</a>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">C</div>
+    <div>
+      <h1>Crypto.com Activity Dashboard<span class="ver">v1 · email-derived</span></h1>
+      <div class="sub">Reconstructed from balrajcrypto@gmail.com inbox · ~400 emails scanned</div>
+    </div>
+  </div>
+  <div class="meta">
+    App account opened <b>2021-09-12</b><br>
+    Exchange opened <b>2022-08-05</b> · NFT <b>2021-10-15</b><br>
+    <b>7 transactional events</b> captured
+  </div>
+</header>
+
+<div class="alert">
+  <b>⚠ Heads up:</b> Crypto.com only sends transactional emails for App buys/sells/deposits — internal swaps, Crypto Earn rewards, Visa Card cashback, and Exchange trades don't trigger emails. Full reconciliation needs a CSV export from Account → Transaction History. The figures below are <b>partial</b>.
+</div>
+
+<div class="balance-card">
+  <h2>What email shows you have / had on Crypto.com</h2>
+  <div class="lead">$2,700 USD card-spend in (Mar–Aug 2024) → 0.0561828 BTC + 1,096.3 DOGE accumulated
+    <small>Plus 0.29412115 ETH and 2.52927538 SOL transferred IN from Binance · 750.6829 USDT was deposited then sold for 0.0120656 BTC</small>
+  </div>
+  <div class="recon">
+    <div class="in"><span>Card spend</span><b>$2,700 USD</b></div>
+    <div class="in"><span>External deposits</span><b>USDT + ETH + SOL</b></div>
+    <div class="out"><span>Internal sell</span><b>USDT → BTC</b></div>
+    <div class="net"><span>Live balance</span><b>Check app to confirm</b></div>
+  </div>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi gold"><label>BTC accumulated</label><div class="val">0.0561828 <small>BTC</small></div><div class="hint">2 card buys + 1 USDT swap</div></div>
+  <div class="kpi green"><label>Fiat spent (card)</label><div class="val">$2,700 <small>+$107.73 fees</small></div><div class="hint">VISA ***6877 · same card as Binance</div></div>
+  <div class="kpi"><label>External transfers in</label><div class="val">3 <small>events</small></div><div class="hint">USDT, ETH, SOL (ETH+SOL from Binance)</div></div>
+  <div class="kpi red"><label>Last activity</label><div class="val">Aug 2024</div><div class="hint">Mostly newsletters since (Crypto Spotlight)</div></div>
+</div>
+
+<div class="row wide">
+  <div class="card">
+    <h2>All transactions <span class="count">7 events</span></h2>
+    <table>
+      <thead>
+        <tr><th>Time (Dubai)</th><th>Event</th><th>Asset</th><th class="mono">Amount</th><th>Counterpart</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="mono small">2024-01-08 09:50</td><td><span class="pill in">Deposit</span></td><td><span class="asset USDT">USDT</span></td><td class="mono">750.6829</td><td class="small">External wallet (likely Binance USDT?)</td></tr>
+        <tr><td class="mono small">2024-02-29 07:48</td><td><span class="pill sell">Sell</span></td><td><span class="asset USDT">USDT</span> → <span class="asset BTC">BTC</span></td><td class="mono">750.6829 → 0.0120656</td><td class="small">Internal swap · BTC ~$62,200</td></tr>
+        <tr><td class="mono small">2024-03-14 21:50</td><td><span class="pill buy">Card buy</span></td><td><span class="asset DOGE">DOGE</span></td><td class="mono">1,096.3</td><td class="small">$200 USD · rate $0.182 · fee $7.98 · VISA ***6877</td></tr>
+        <tr><td class="mono small">2024-04-19 09:44</td><td><span class="pill in">Deposit</span> <span class="pill link">Binance</span></td><td><span class="asset ETH">ETH</span></td><td class="mono">0.29412115</td><td class="small">Withdrawn from Binance 12 min earlier</td></tr>
+        <tr><td class="mono small">2024-04-23 01:14</td><td><span class="pill in">Deposit</span> <span class="pill link">Binance</span></td><td><span class="asset SOL">SOL</span></td><td class="mono">2.52927538</td><td class="small">Withdrawn from Binance 3 min earlier</td></tr>
+        <tr><td class="mono small">2024-07-05 10:00</td><td><span class="pill buy">Card buy</span></td><td><span class="asset BTC">BTC</span></td><td class="mono">0.0179996</td><td class="small">$1,000 USD · rate $55,556 · fee $39.90 · VISA ***6877</td></tr>
+        <tr><td class="mono small">2024-08-06 20:02</td><td><span class="pill buy">Card buy</span></td><td><span class="asset BTC">BTC</span></td><td class="mono">0.0261176</td><td class="small">$1,500 USD · rate $57,432 · fee $59.85 · VISA ***6877</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h2>BTC acquisition split <span class="count">0.0562 BTC total</span></h2>
+    <div class="chart-wrap"><canvas id="btcPie"></canvas></div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="card">
+    <h2>Asset positions (from inflows minus outflows) <span class="count">email-visible</span></h2>
+    <table>
+      <thead><tr><th>Asset</th><th class="mono">In</th><th class="mono">Out</th><th class="mono">Net (rough)</th></tr></thead>
+      <tbody>
+        <tr><td><span class="asset BTC">BTC</span></td><td class="mono">0.0561828</td><td class="mono">—</td><td class="mono">0.0561828 (if held)</td></tr>
+        <tr><td><span class="asset ETH">ETH</span></td><td class="mono">0.29412115</td><td class="mono">—</td><td class="mono">0.29412115 (if held)</td></tr>
+        <tr><td><span class="asset SOL">SOL</span></td><td class="mono">2.52927538</td><td class="mono">—</td><td class="mono">2.52927538 (if held)</td></tr>
+        <tr><td><span class="asset DOGE">DOGE</span></td><td class="mono">1,096.3</td><td class="mono">—</td><td class="mono">1,096.3 (if held)</td></tr>
+        <tr><td><span class="asset USDT">USDT</span></td><td class="mono">750.6829</td><td class="mono">750.6829</td><td class="mono">0 (sold to BTC)</td></tr>
+      </tbody>
+    </table>
+    <div class="small" style="margin-top:10px">Assumes no withdrawals or further internal swaps since Aug 2024. Verify in app.</div>
+  </div>
+
+  <div class="card">
+    <h2>Services on the account <span class="count">3 distinct</span></h2>
+    <table>
+      <thead><tr><th>Service</th><th>Status</th><th>Signup</th></tr></thead>
+      <tbody>
+        <tr><td><b>Crypto.com App</b><div class="small">Main consumer app · buy/sell/earn/card</div></td><td><span class="pill in">Active</span></td><td class="mono small">2021-09-12</td></tr>
+        <tr><td><b>Crypto.com Exchange</b><div class="small">Pro trading · order book</div></td><td><span class="pill in">Active</span></td><td class="mono small">2022-08-05</td></tr>
+        <tr><td><b>Crypto.com NFT</b><div class="small">NFT marketplace · no purchases seen</div></td><td><span class="pill in">Active</span></td><td class="mono small">2021-10-15</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:14px">
+  <h2>Cross-platform trail <span class="count">Binance → Crypto.com</span></h2>
+  <table>
+    <thead><tr><th>Date</th><th>Asset</th><th class="mono">Amount</th><th>Binance withdrawal time</th><th>Crypto.com deposit time</th><th>Gap</th></tr></thead>
+    <tbody>
+      <tr><td class="mono small">2024-04-19</td><td><span class="asset ETH">ETH</span></td><td class="mono">0.29412115</td><td class="mono small">09:32:42 Dubai</td><td class="mono small">09:44:36 Dubai</td><td class="mono small">12 min</td></tr>
+      <tr><td class="mono small">2024-04-23</td><td><span class="asset SOL">SOL</span></td><td class="mono">2.52927538</td><td class="mono small">01:11:41 Dubai</td><td class="mono small">01:14:40 Dubai</td><td class="mono small">3 min</td></tr>
+    </tbody>
+  </table>
+  <div class="small" style="margin-top:10px">Exact amounts match to 8 decimal places → 100% confirmed these were the same transfers. The Binance withdrawal addresses (<span class="mono">0xC58c...7BF0</span> for ETH, <span class="mono">9Ji8J37ec...xdaM</span> for SOL) are your Crypto.com deposit addresses.</div>
+</div>
+
+<div class="card" style="margin-bottom:14px">
+  <h2>Notable events from email <span class="count">2022–2024</span></h2>
+  <table>
+    <thead><tr><th>Date</th><th>Event</th></tr></thead>
+    <tbody>
+      <tr><td class="mono small">2022-08-05</td><td>Welcome to Crypto.com Exchange (pro trading account opened)</td></tr>
+      <tr><td class="mono small">2022-10-11</td><td>24-Hour Withdrawal Lock feature disabled (you turned off the security delay)</td></tr>
+      <tr><td class="mono small">2024-08-29</td><td>New USD Fiat Wallet announcement (requires action)</td></tr>
+      <tr><td class="mono small">2024-10-02 / 10-11</td><td>⚠ ACTION REQUIRED · Set up new fiat wallet or lose USD deposit ability</td></tr>
+    </tbody>
+  </table>
+  <div class="small" style="margin-top:10px">The Oct 2024 alerts mean your USD deposit channel may be broken if you didn't migrate.</div>
+</div>
+
+<div class="footer">
+  <p><b>What's missing here.</b></p>
+  <ul>
+    <li><b>Crypto Earn rewards</b> — Crypto.com runs daily/weekly earn payouts. No per-payout emails.</li>
+    <li><b>Visa Card cashback</b> — if you have a Crypto.com Visa card, daily CRO cashback isn't emailed.</li>
+    <li><b>Crypto.com Exchange trades</b> — separate platform; trades there have their own emails (only 1 transactional email seen — minimal activity).</li>
+    <li><b>NFT activity</b> — no purchase confirmations seen, likely never used past the welcome.</li>
+    <li><b>Pre-Aug 2022 history</b> — emails go back to 2022-06; need full Account → Transaction History export for 2021–2022.</li>
+  </ul>
+  <p><b>To close the gap:</b> Crypto.com App → Account → Transaction History → Export → CSV. Same drill as the Binance reconciliation.</p>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+new Chart($('#btcPie').getContext('2d'),{
+  type:'doughnut',
+  data:{
+    labels:['Card buy Aug 2024','Card buy Jul 2024','USDT → BTC swap Feb 2024'],
+    datasets:[{
+      data:[0.0261176, 0.0179996, 0.0120656],
+      backgroundColor:['#f7931a','#129DFF','#22c55e'],
+      borderColor:'#13131a',
+      borderWidth:2
+    }]
+  },
+  options:{
+    plugins:{
+      legend:{labels:{color:'#e9e9f1',font:{size:11},padding:8}},
+      tooltip:{callbacks:{label:(c)=>c.label+': '+c.raw.toFixed(7)+' BTC'}}
+    },
+    cutout:'58%'
+  }
+});
+</script>
+</body>
+</html>
