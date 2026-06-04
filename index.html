@@ -3,377 +3,294 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Binance — Personal Activity Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<title>Asset Dashboard</title>
 <style>
   :root{
     --bg:#0a0a0c; --panel:#13131a; --panel2:#1b1b25; --line:#26263a;
-    --text:#e9e9f1; --mute:#8a8aa3; --accent:#f0b90b;
+    --text:#e9e9f1; --mute:#8a8aa3;
     --green:#22c55e; --red:#ef4444; --blue:#3b82f6;
     --mono:'JetBrains Mono', SFMono-Regular, ui-monospace, monospace;
     --sans:-apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
   }
   *{box-sizing:border-box}
   html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.5}
-  body{min-height:100vh;padding:32px 28px 80px;max-width:1400px;margin:0 auto}
-  header{display:flex;align-items:baseline;justify-content:space-between;gap:24px;margin-bottom:28px;flex-wrap:wrap}
-  .brand{display:flex;align-items:center;gap:12px}
-  .brand-mark{width:32px;height:32px;background:var(--accent);border-radius:8px;display:grid;place-items:center;color:#0a0a0c;font-weight:900;font-family:var(--mono);font-size:18px}
-  h1{font-size:22px;font-weight:700;margin:0;letter-spacing:-0.01em}
-  .sub{color:var(--mute);font-size:13px;margin-top:2px}
-  .meta{font-family:var(--mono);font-size:12px;color:var(--mute);text-align:right}
-  .meta b{color:var(--text);font-weight:500}
-  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
-  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;position:relative;overflow:hidden}
-  .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent)}
-  .kpi.green::before{background:var(--green)}
-  .kpi.red::before{background:var(--red)}
-  .kpi.blue::before{background:var(--blue)}
-  .kpi label{display:block;color:var(--mute);font-size:11px;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:8px}
-  .kpi .val{font-family:var(--mono);font-size:26px;font-weight:700;letter-spacing:-0.02em}
-  .kpi .val small{font-size:14px;color:var(--mute);font-weight:500;margin-left:6px}
-  .kpi .hint{color:var(--mute);font-size:12px;margin-top:6px}
-  .row{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:16px}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px 22px}
-  .card h2{font-size:13px;text-transform:uppercase;letter-spacing:0.08em;color:var(--mute);margin:0 0 14px;font-weight:600;display:flex;align-items:baseline;gap:6px}
-  .card h2 .count{color:var(--accent);font-family:var(--mono)}
-  table{width:100%;border-collapse:collapse;font-size:13px}
-  thead th{text-align:left;color:var(--mute);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;padding:8px 10px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel)}
-  tbody td{padding:10px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle}
-  tbody tr:hover{background:rgba(240,185,11,0.04)}
-  .mono{font-family:var(--mono);font-size:12.5px}
-  .asset{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-family:var(--mono);font-size:12px;padding:3px 8px;border-radius:6px;background:rgba(240,185,11,0.12);color:var(--accent);letter-spacing:0.02em}
-  .asset.BTC{background:rgba(247,147,26,0.12);color:#f7931a}
-  .asset.ETH{background:rgba(98,126,234,0.14);color:#8aa1ff}
-  .asset.BNB{background:rgba(240,185,11,0.14);color:var(--accent)}
-  .asset.XRP{background:rgba(255,255,255,0.08);color:#fff}
-  .asset.ADA{background:rgba(0,114,206,0.18);color:#56a8ff}
-  .asset.SOL{background:rgba(157,73,247,0.18);color:#c39cff}
-  .asset.DOGE{background:rgba(195,154,69,0.18);color:#e6c177}
-  .asset.SHIB{background:rgba(255,140,80,0.18);color:#ffb074}
-  .asset.BUSD,.asset.USDT{background:rgba(0,194,138,0.16);color:#2dd4a3}
-  .asset.IOST{background:rgba(150,150,200,0.16);color:#bfbfeb}
-  .asset.AVAX{background:rgba(232,65,66,0.18);color:#ff7878}
-  .small{color:var(--mute);font-size:11.5px}
-  .pill{display:inline-block;padding:2px 7px;border-radius:5px;font-size:10.5px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;font-family:var(--mono);margin-left:6px}
-  .pill.in{background:rgba(34,197,94,0.15);color:var(--green)}
-  .pill.out{background:rgba(239,68,68,0.15);color:var(--red)}
-  .pill.warn{background:rgba(239,68,68,0.15);color:var(--red)}
-  .charts{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
-  .chart-wrap{position:relative;height:280px}
-  .scroll{max-height:520px;overflow:auto}
-  .scroll::-webkit-scrollbar{width:6px}
-  .scroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
-  .holdings{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-  .hold{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
-  .hold .asset{margin-bottom:8px}
-  .hold .qty{font-family:var(--mono);font-size:18px;font-weight:700;letter-spacing:-0.01em}
-  .hold .src{color:var(--mute);font-size:11px;margin-top:4px}
-  .footer{margin-top:32px;color:var(--mute);font-size:12px;line-height:1.7;border-top:1px solid var(--line);padding-top:18px}
-  .footer b{color:var(--text)}
-  .footer p{margin:0 0 10px}
-  .addr{font-family:var(--mono);font-size:11px;color:var(--mute);max-width:180px;display:inline-block;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;white-space:nowrap}
-  .balance-card{background:linear-gradient(135deg,rgba(240,185,11,0.08),rgba(247,147,26,0.04));border:1px solid rgba(240,185,11,0.3);border-radius:14px;padding:20px 22px;margin-bottom:16px}
-  .balance-card h2{color:var(--accent);margin-bottom:8px}
-  .balance-card .reported{font-family:var(--mono);font-size:24px;font-weight:700}
-  .balance-card .reported small{font-size:14px;color:var(--mute);margin-left:8px;font-weight:500}
-  .recon{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:14px;font-size:12px}
-  .recon div{display:flex;justify-content:space-between;padding:6px 10px;background:rgba(255,255,255,0.03);border-radius:6px}
-  .recon div b{font-family:var(--mono);font-weight:600}
-  @media (max-width:1100px){.kpi-grid,.row,.charts,.holdings{grid-template-columns:1fr 1fr}}
-  @media (max-width:680px){body{padding:18px 14px}.kpi-grid,.row,.charts,.holdings,.recon{grid-template-columns:1fr}h1{font-size:18px}.meta{text-align:left}}
+  body{min-height:100vh;padding:48px 28px 80px;max-width:1280px;margin:0 auto}
+
+  header{margin-bottom:36px}
+  .brand{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+  .brand-mark{width:38px;height:38px;background:linear-gradient(135deg,#f0b90b,#f7931a);border-radius:9px;display:grid;place-items:center;color:#0a0a0c;font-weight:900;font-family:var(--mono);font-size:18px}
+  h1{font-size:30px;font-weight:700;margin:0;letter-spacing:-0.02em}
+  .sub{color:var(--mute);font-size:14px;margin-top:4px}
+
+  .stats{display:flex;gap:28px;margin-top:24px;padding:16px 20px;background:var(--panel);border:1px solid var(--line);border-radius:12px;flex-wrap:wrap}
+  .stat label{display:block;color:var(--mute);font-size:11px;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:4px}
+  .stat .v{font-family:var(--mono);font-size:18px;font-weight:700}
+  .stat .v.green{color:var(--green)}
+  .stat .v small{font-size:12px;color:var(--mute);font-weight:500;margin-left:4px}
+
+  section{margin-top:36px}
+  section h2{font-size:13px;text-transform:uppercase;letter-spacing:0.1em;color:var(--mute);margin:0 0 16px;font-weight:700;display:flex;align-items:baseline;gap:10px}
+  section h2 .pill{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(34,197,94,0.16);color:var(--green);letter-spacing:0.04em;font-weight:600}
+  section h2 .pill.soon{background:rgba(138,138,163,0.16);color:var(--mute)}
+
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .tile{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 18px 16px;text-decoration:none;color:inherit;display:flex;flex-direction:column;min-height:142px;transition:transform .15s ease,border-color .15s ease,background .15s ease;position:relative;overflow:hidden}
+  .tile:hover{transform:translateY(-2px);border-color:var(--accent,#f0b90b)}
+  .tile.disabled{opacity:0.55;pointer-events:none}
+  .tile-head{display:flex;align-items:center;gap:10px;margin-bottom:auto}
+  .logo{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;font-family:var(--mono);font-weight:900;font-size:14px;flex-shrink:0;letter-spacing:0.02em}
+  .tile h3{margin:0;font-size:15px;font-weight:700;letter-spacing:-0.01em}
+  .tile .region{color:var(--mute);font-size:11px;margin-top:1px;font-family:var(--mono);letter-spacing:0.02em}
+  .tile-foot{display:flex;justify-content:space-between;align-items:center;margin-top:14px;font-size:11.5px;color:var(--mute)}
+  .tile .badge{display:inline-block;font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:4px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase}
+  .tile .badge.live{background:rgba(34,197,94,0.18);color:var(--green)}
+  .tile .badge.soon{background:rgba(138,138,163,0.16);color:var(--mute)}
+  .tile .badge.wind{background:rgba(239,68,68,0.18);color:var(--red)}
+  .tile .arrow{font-family:var(--mono);color:var(--mute);font-size:14px}
+
+  /* Per-brand logo backgrounds */
+  .l-binance{background:#f0b90b;color:#0a0a0c}
+  .l-coinbase{background:#0052ff;color:#fff}
+  .l-coincheck{background:#36486b;color:#fff}
+  .l-bybit{background:#f7a600;color:#0a0a0c}
+  .l-okx{background:#0a0a0c;color:#fff;border:1px solid #fff}
+  .l-cryptocom{background:#0a2540;color:#fff}
+  .l-bitoasis{background:#00b894;color:#0a0a0c}
+  .l-bitget{background:#00f0ff;color:#0a0a0c}
+  .l-sbivc{background:#119;color:#fff}
+  .l-dmm{background:#000;color:#f00;border:1px solid #f00}
+  .l-rakuten{background:#bf0000;color:#fff}
+  .l-kraken{background:#5841d8;color:#fff}
+  .l-xapo{background:#00bcd4;color:#0a0a0c}
+  .l-gmo{background:#003a8e;color:#fff}
+  .l-huobi{background:#ff7a00;color:#fff}
+  .l-bitpay{background:#1ba1e2;color:#fff}
+  .l-ftx{background:#11a9bc;color:#fff}
+  .l-cmc{background:#3861fb;color:#fff}
+  .l-koinly{background:#02a87e;color:#fff}
+  .l-cointracker{background:#5e3aff;color:#fff}
+  .l-coinpanda{background:#000;color:#22c55e}
+  .l-kubera{background:#ffb800;color:#0a0a0c}
+
+  footer{margin-top:48px;color:var(--mute);font-size:12px;border-top:1px solid var(--line);padding-top:18px;line-height:1.7}
+  footer b{color:var(--text)}
+
+  @media (max-width:1100px){ .grid{grid-template-columns:repeat(3,1fr)} }
+  @media (max-width:780px){ .grid{grid-template-columns:repeat(2,1fr)} body{padding:24px 16px} h1{font-size:24px} }
+  @media (max-width:480px){ .grid{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
 
 <header>
   <div class="brand">
-    <div class="brand-mark">B</div>
+    <div class="brand-mark">A</div>
     <div>
-      <h1>Binance Activity Dashboard</h1>
-      <div class="sub">Reconstructed from <span class="mono">balrajcrypto@</span> + <span class="mono">balrajmoney@</span> · email-derived</div>
+      <h1>Asset Dashboard</h1>
+      <div class="sub">Personal holdings across exchanges, wallets &amp; banks</div>
     </div>
   </div>
-  <div class="meta">
-    Account opened <b>2021-02-16</b><br>
-    Reporting through <b>2026-06-04</b><br>
-    Source: <b>33 transactional emails</b>
+  <div class="stats">
+    <div class="stat"><label>Crypto accounts</label><div class="v">20</div></div>
+    <div class="stat"><label>Live dashboards</label><div class="v green">1</div></div>
+    <div class="stat"><label>Tax / tracker tools</label><div class="v">5</div></div>
+    <div class="stat"><label>Last updated</label><div class="v">Jun 4 2026</div></div>
   </div>
 </header>
 
-<!-- Balance reconciliation card -->
-<div class="balance-card">
-  <h2>Reported balance vs. email-derived flows</h2>
-  <div class="reported">0.37741816 BTC <small>≈ $24,062.18 reported by Binance</small></div>
-  <div class="recon">
-    <div><span>Card buys (fiat in)</span><b>~$2,600</b></div>
-    <div><span>External deposits (in)</span><b>~$3,800</b></div>
-    <div><span>External withdrawals (out)</span><b>~ –$9,800</b></div>
-    <div><span>Net email-visible flow</span><b>~ –$3,400</b></div>
+<section>
+  <h2>Crypto Exchanges <span class="pill">1 of 20 live</span></h2>
+  <div class="grid">
+
+    <a class="tile" href="binance.html">
+      <div class="tile-head">
+        <div class="logo l-binance">B</div>
+        <div><h3>Binance</h3><div class="region">JP · since 2021-02-16</div></div>
+      </div>
+      <div class="tile-foot"><span class="badge live">Live</span><span class="arrow">→</span></div>
+    </a>
+
+    <a class="tile disabled">
+      <div class="tile-head">
+        <div class="logo l-coincheck">C</div>
+        <div><h3>Coincheck</h3><div class="region">JP · since 2021</div></div>
+      </div>
+      <div class="tile-foot"><span class="badge soon">Soon</span></div>
+    </a>
+
+    <a class="tile disabled">
+      <div class="tile-head">
+        <div class="logo l-bybit">B</div>
+        <div><h3>Bybit</h3><div class="region">JP · since 2025-01</div></div>
+      </div>
+      <div class="tile-foot"><span class="badge wind">Winding down</span></div>
+    </a>
+
+    <a class="tile disabled">
+      <div class="tile-head">
+        <div class="logo l-okx">O</div>
+        <div><h3>OKX</h3><div class="region">UAE · since 2025-11</div></div>
+      </div>
+      <div class="tile-foot"><span class="badge soon">Soon</span></div>
+    </a>
+
+    <a class="tile disabled">
+      <div class="tile-head">
+        <div class="logo l-cryptocom">C</div>
+        <div><h3>Crypto.com</h3><div class="region">Global · since 2021-09</div></div>
+      </div>
+      <div class="tile-foot"><span class="badge soon">Soon</span></div>
+    </a>
+
+    <a class="tile disabled">
+      <div class="tile-head">
+        <div class="logo l-bitoasis">B</div>
+        <div><h3>BitOasis</h3><div class="region">UAE · since 2026-01</div></div>
+      </div>
+      <div class="tile-foot"><span class="badge soon">Soon</span></div>
+    </a>
+
+    <a class="tile disabled">
+      <div class="tile-head">
+        <div class="logo l-bitget">B</div>
+        <div><h3>Bitget</h3><div class="region">JP · since 2025-02</div></div>
+      </div>
+      <div class="tile-foot"><span class="badge soon">Soon</span></div>
+    </a>
+
+    <a class="tile disabled">
+      <div class="tile-head">
+        <div class="logo l-sbivc">S</div>
+        <div><h3>SBI VC Trade</h3><div class="region">JP · since 2025-08</div></div>
+      </div>
+      <div class="tile-foot"><span class="badge soon">Soon</span></div>
+    </a>
+
+    <a class="tile disabled">
+      <div class="tile-head">
+        <div class="logo l-dmm">D</div>
+        <div><h3>DMM Bitcoin</h3><div class="region">JP · since 2024-01</div></div>
+      </div>
+      <div class="tile-foot"><span class="badge soon">Soon</span></div>
+    </a>
+
+    <a class="tile disabled">
+      <div class="tile-head">
+        <div class="logo l-rakuten">R</div>
+        <div><h3>Rakuten Wallet</h3><div class="region">JP · since 2024-08</div></div>
+      </div>
+      <div class="tile-foot"><span class="badge soon">Soon</span></div>
+    </a>
+
+    <a class="tile disabled">
+      <div class="tile-head">
+        <div class="logo l-gmo">G</div>
+        <div><h3>GMO Coin</h3><div class="region">JP · since 2025-01</div></div>
+      </div>
+      <div class="tile-foot"><span class="badge soon">Soon</span></div>
+    </a>
+
+    <a class="tile disabled">
+      <div class="tile-head">
+        <div class="logo l-kraken">K</div>
+        <div><h3>Kraken</h3><div class="region">Global · since 2024-08</div></div>
+      </div>
+      <div class="tile-foot"><span class="badge soon">Soon</span></div>
+    </a>
+
+    <a class="tile disabled">
+      <div class="tile-head">
+        <div class="logo l-coinbase">C</div>
+        <div><h3>Coinbase</h3><div class="region">Global · since 2021-09</div></div>
+      </div>
+      <div class="tile-foot"><span class="badge soon">Soon</span></div>
+    </a>
+
+    <a class="tile disabled">
+      <div class="tile-head">
+        <div class="logo l-xapo">X</div>
+        <div><h3>Xapo Bank</h3><div class="region">Global · since 2024-08</div></div>
+      </div>
+      <div class="tile-foot"><span class="badge soon">Soon</span></div>
+    </a>
+
+    <a class="tile disabled">
+      <div class="tile-head">
+        <div class="logo l-huobi">H</div>
+        <div><h3>Huobi Japan</h3><div class="region">JP · since 2021-03</div></div>
+      </div>
+      <div class="tile-foot"><span class="badge soon">Soon</span></div>
+    </a>
+
+    <a class="tile disabled">
+      <div class="tile-head">
+        <div class="logo l-bitpay">B</div>
+        <div><h3>BitPay</h3><div class="region">Global · since 2024-04</div></div>
+      </div>
+      <div class="tile-foot"><span class="badge soon">Soon</span></div>
+    </a>
+
+    <a class="tile disabled">
+      <div class="tile-head">
+        <div class="logo l-ftx">F</div>
+        <div><h3>FTX</h3><div class="region">Global · since 2021-09</div></div>
+      </div>
+      <div class="tile-foot"><span class="badge wind">Defunct</span></div>
+    </a>
+
   </div>
-  <div class="sub" style="margin-top:14px">
-    Gap is filled by <b>internal trades</b>, <b>Simple Earn yields</b>, the <b>Dec 1 2023 Japan migration</b> (auto-converted altcoins → BTC/ETH), and <b>price appreciation</b> on what stayed in. None of those send emails, so they don&rsquo;t appear in the tables below.
+</section>
+
+<section>
+  <h2>Tax &amp; Portfolio Tools <span class="pill soon">trackers</span></h2>
+  <div class="grid">
+
+    <a class="tile disabled">
+      <div class="tile-head">
+        <div class="logo l-coinpanda">C</div>
+        <div><h3>Coinpanda</h3><div class="region">Crypto tax</div></div>
+      </div>
+      <div class="tile-foot"><span class="badge soon">Soon</span></div>
+    </a>
+
+    <a class="tile disabled">
+      <div class="tile-head">
+        <div class="logo l-koinly">K</div>
+        <div><h3>Koinly</h3><div class="region">Crypto tax</div></div>
+      </div>
+      <div class="tile-foot"><span class="badge soon">Soon</span></div>
+    </a>
+
+    <a class="tile disabled">
+      <div class="tile-head">
+        <div class="logo l-cointracker">C</div>
+        <div><h3>CoinTracker</h3><div class="region">Crypto tax</div></div>
+      </div>
+      <div class="tile-foot"><span class="badge soon">Soon</span></div>
+    </a>
+
+    <a class="tile disabled">
+      <div class="tile-head">
+        <div class="logo l-kubera">K</div>
+        <div><h3>Kubera</h3><div class="region">Net-worth tracker</div></div>
+      </div>
+      <div class="tile-foot"><span class="badge soon">Soon</span></div>
+    </a>
+
+    <a class="tile disabled">
+      <div class="tile-head">
+        <div class="logo l-cmc">C</div>
+        <div><h3>CoinMarketCap</h3><div class="region">Watchlist</div></div>
+      </div>
+      <div class="tile-foot"><span class="badge soon">Soon</span></div>
+    </a>
+
   </div>
-</div>
+</section>
 
-<!-- KPIs -->
-<div class="kpi-grid">
-  <div class="kpi">
-    <label>Total fiat in (card)</label>
-    <div class="val" id="kpiFiat"></div>
-    <div class="hint">17 card buys, Feb–May 2021</div>
-  </div>
-  <div class="kpi green">
-    <label>External deposits</label>
-    <div class="val">8 <small>events</small></div>
-    <div class="hint">USDT, ADA, AVAX, IOST received from outside</div>
-  </div>
-  <div class="kpi red">
-    <label>External withdrawals</label>
-    <div class="val">8 <small>events</small></div>
-    <div class="hint">XRP / BTC / ETH / SOL sent out</div>
-  </div>
-  <div class="kpi blue">
-    <label>Account age</label>
-    <div class="val">5y 4m</div>
-    <div class="hint">Migrated to Binance Japan on 2023-12-01</div>
-  </div>
-</div>
-
-<!-- Charts row -->
-<div class="charts">
-  <div class="card">
-    <h2>Card spend by asset <span class="count">JPY-equivalent</span></h2>
-    <div class="chart-wrap"><canvas id="spendChart"></canvas></div>
-  </div>
-  <div class="card">
-    <h2>Activity timeline <span class="count">2021 → 2025</span></h2>
-    <div class="chart-wrap"><canvas id="timelineChart"></canvas></div>
-  </div>
-</div>
-
-<!-- Card purchases table -->
-<div class="card" style="margin-bottom:16px">
-  <h2>Card purchases <span class="count">17 transactions, Feb–May 2021</span></h2>
-  <div class="scroll">
-    <table>
-      <thead>
-        <tr><th>#</th><th>Date (Dubai)</th><th>Asset</th><th class="mono">Amount bought</th><th>Spent</th><th>Rate</th><th>Fee</th><th>Card</th></tr>
-      </thead>
-      <tbody id="buysBody"></tbody>
-    </table>
-  </div>
-</div>
-
-<!-- Holdings summary -->
-<div class="card" style="margin-bottom:16px">
-  <h2>Accumulated from card buys <span class="count">on-ramp totals only</span></h2>
-  <div class="holdings" id="holdingsGrid"></div>
-</div>
-
-<!-- Deposits & Withdrawals -->
-<div class="row">
-  <div class="card">
-    <h2>External deposits <span class="count">8 inbound</span></h2>
-    <table>
-      <thead><tr><th>Date</th><th>Asset</th><th class="mono">Amount</th></tr></thead>
-      <tbody id="depsBody"></tbody>
-    </table>
-  </div>
-  <div class="card">
-    <h2>External withdrawals <span class="count">8 outbound</span></h2>
-    <table>
-      <thead><tr><th>Date</th><th>Asset</th><th class="mono">Amount</th><th>To</th></tr></thead>
-      <tbody id="wdsBody"></tbody>
-    </table>
-  </div>
-</div>
-
-<div class="footer">
-  <p><b>Caveats.</b> Email-only reconstruction. Internal spot trades, Convert swaps, Simple Earn yield payouts, and futures P&amp;L do <b>not</b> generate emails — anything done inside Binance after these on-ramps is invisible here. The Dec 1, 2023 migration auto-converted &ldquo;impermissible&rdquo; tokens into BTC or ETH, which would have re-shaped the asset mix.</p>
-  <p><b>Trail.</b> The 9.8 XRP withdrawal on 2025-01-27 to <span class="mono">rJn2zAPdFA...3apQh</span> matches the Bybit XRP deposit-confirmation address from the same day — that&rsquo;s how XRP got from Binance into Bybit.</p>
-  <p><b>Big outflow.</b> 0.085 BTC on 2025-05-19 to <span class="mono">1GpNZ2ZevL68...5esE</span> was preceded by a 0.0000096 BTC dust test 5 minutes earlier. Good practice — confirm that address is one of yours.</p>
-  <p><b>For tax purposes</b>, pull Binance Japan&rsquo;s annual transaction CSV — that&rsquo;s the only source-of-truth for realized P&amp;L.</p>
-</div>
-
-<script>
-const BUYS = [
-  ['2021-02-26 21:35','XRP',34.1,1700,'JPY',48.86,34,'JPY','***2987'],
-  ['2021-02-27 09:24','DOGE',274,15,'USD',0.05361,0.31,'USD','***2987'],
-  ['2021-02-28 16:21','BNB',0.12,3000,'JPY',24500,60,'JPY','***2987'],
-  ['2021-02-28 19:23','BUSD',90.16115294,10000,'JPY',108.69,200,'JPY','***2987'],
-  ['2021-02-28 20:05','BUSD',90.16115294,10000,'JPY',108.69,200,'JPY','***2987'],
-  ['2021-03-04 20:13','USDT',89.28185378,10000,'JPY',109.76,200,'JPY','***2987'],
-  ['2021-03-15 19:18','DOGE',845,50,'USD',0.05799,1,'USD','***2987'],
-  ['2021-04-17 21:22','DOGE',171,50,'USD',0.28655,1,'USD','***2987'],
-  ['2021-04-17 21:25','BTC',0.002183,15000,'JPY',6733852,300,'JPY','***2987'],
-  ['2021-05-05 18:11','DOGE',21.9,15,'USD',0.67078,0.31,'USD','***2987'],
-  ['2021-05-07 19:13','DOGE',797.2,500,'USD',0.61465,10,'USD','***6877'],
-  ['2021-05-13 18:54','ADA',51.5,100,'USD',1.90291,2,'USD','***2987'],
-  ['2021-05-13 18:56','SHIB',2353299,50,'USD',0.00002082,1,'USD','***2987'],
-  ['2021-05-19 16:18','ETH',0.15981,50000,'JPY',306614,1000,'JPY','***6877'],
-  ['2021-05-19 16:21','BTC',0.012413,500,'USD',39474.74,10,'USD','***6877'],
-  ['2021-05-19 16:29','BNB',0.4421,20000,'JPY',44333.86,400,'JPY','***6877'],
-  ['2021-05-21 16:12','ADA',112.91,200,'USD',1.7359,4,'USD','***6877'],
-];
-const DEPOSITS = [
-  ['2021-03-04 17:36','IOST',100],
-  ['2021-03-06 10:27','IOST',992.8],
-  ['2021-09-16 04:18','ADA',9.2],
-  ['2021-09-16 05:04','ADA',377.2],
-  ['2021-09-17 19:32','AVAX',0.147],
-  ['2021-09-17 21:02','AVAX',2.743],
-  ['2021-09-20 09:09','USDT',475],
-  ['2021-09-20 16:51','USDT',1757.07],
-];
-const WITHDRAWALS = [
-  ['2021-03-15 19:56','DOGE',6.4,'0x8015...8cdb',true,'DOGE → EVM address (wrapped/test)'],
-  ['2021-09-23 18:56','XRP',99.75,'rP1iLqb...AKKJ (Tag 7777777)',false,''],
-  ['2024-04-19 09:32','ETH',0.29412115,'0xC58c...7BF0',false,''],
-  ['2024-04-23 01:11','SOL',2.52927538,'9Ji8J37ec...xdaM',false,''],
-  ['2025-01-27 10:40','XRP',9.8,'rJn2zAPd...3apQh',false,'→ Bybit'],
-  ['2025-01-28 06:34','BTC',0.00007,'bc1qn4...kkfh',false,'tiny / test'],
-  ['2025-05-19 19:24','BTC',0.0000096,'1GpNZ2...5esE',false,'dust test'],
-  ['2025-05-19 19:29','BTC',0.085,'1GpNZ2...5esE',false,'real send'],
-];
-
-// ---- Safe DOM helpers (no innerHTML) ----
-const $ = (s) => document.querySelector(s);
-function el(tag, attrs={}, ...kids){
-  const n = document.createElement(tag);
-  for (const [k,v] of Object.entries(attrs)){
-    if (k==='class') n.className = v;
-    else if (k==='text') n.textContent = v;
-    else n.setAttribute(k,v);
-  }
-  for (const kid of kids){
-    if (kid==null) continue;
-    if (typeof kid==='string') n.appendChild(document.createTextNode(kid));
-    else n.appendChild(kid);
-  }
-  return n;
-}
-function assetSpan(a){ return el('span',{class:`asset ${a}`,text:a}); }
-function pill(text,cls){ return el('span',{class:`pill ${cls}`,text}); }
-function fmt(n,max=8){
-  if (n===0) return '0';
-  if (Math.abs(n)>=1000) return n.toLocaleString('en-US',{maximumFractionDigits:2});
-  if (Math.abs(n)>=1) return n.toLocaleString('en-US',{maximumFractionDigits:max});
-  return n.toLocaleString('en-US',{maximumFractionDigits:8});
-}
-
-// ---- KPI fiat ----
-$('#kpiFiat').appendChild(document.createTextNode('¥122,094'));
-$('#kpiFiat').appendChild(el('small',{text:'+ $1,509.62'}));
-
-// ---- Buys table ----
-const buysBody = $('#buysBody');
-BUYS.forEach((b,i)=>{
-  const [d,a,amt,sp,cur,rate,fee,fcur,card] = b;
-  const tr = el('tr',{},
-    el('td',{class:'mono small',text:String(i+1)}),
-    el('td',{class:'mono',text:d}),
-    el('td',{},assetSpan(a)),
-    el('td',{class:'mono',text:fmt(amt)}),
-    el('td',{class:'mono',text:`${fmt(sp)} ${cur}`}),
-    el('td',{class:'mono small',text:`${fmt(rate)} ${cur}/${a}`}),
-    el('td',{class:'mono small',text:`${fmt(fee)} ${fcur}`}),
-    el('td',{class:'mono small',text:card}),
-  );
-  buysBody.appendChild(tr);
-});
-
-// ---- Deposits ----
-const depsBody = $('#depsBody');
-DEPOSITS.forEach(([date,a,amt])=>{
-  const tag = el('td',{},assetSpan(a),pill('In','in'));
-  const tr = el('tr',{},
-    el('td',{class:'mono small',text:date}),
-    tag,
-    el('td',{class:'mono',text:fmt(amt)})
-  );
-  depsBody.appendChild(tr);
-});
-
-// ---- Withdrawals ----
-const wdsBody = $('#wdsBody');
-WITHDRAWALS.forEach(([date,a,amt,addr,warn,note])=>{
-  const tagTd = el('td',{},assetSpan(a),pill('Out','out'));
-  if (warn) tagTd.appendChild(pill('⚠','warn'));
-  const addrTd = el('td',{}, el('span',{class:'addr',text:addr}));
-  if (note) addrTd.appendChild(el('div',{class:'small',text:note}));
-  wdsBody.appendChild(el('tr',{},
-    el('td',{class:'mono small',text:date}),
-    tagTd,
-    el('td',{class:'mono',text:fmt(amt)}),
-    addrTd
-  ));
-});
-
-// ---- Holdings ----
-const holdings = {};
-BUYS.forEach(([,a,amt])=>{ holdings[a]=(holdings[a]||0)+amt; });
-const holdGrid = $('#holdingsGrid');
-Object.entries(holdings).sort((a,b)=>b[1]-a[1]).forEach(([a,amt])=>{
-  const count = BUYS.filter(b=>b[1]===a).length;
-  holdGrid.appendChild(el('div',{class:'hold'},
-    assetSpan(a),
-    el('div',{class:'qty',text:fmt(amt)}),
-    el('div',{class:'src',text:`${count} buy${count>1?'s':''}`}),
-  ));
-});
-
-// ---- Charts ----
-const USD_TO_JPY = 110;
-const spendByAsset = {};
-BUYS.forEach(([,a,,sp,cur])=>{
-  const jpy = cur==='JPY'?sp:sp*USD_TO_JPY;
-  spendByAsset[a] = (spendByAsset[a]||0)+jpy;
-});
-const sorted = Object.entries(spendByAsset).sort((a,b)=>b[1]-a[1]);
-const colors = ['#f7931a','#8aa1ff','#f0b90b','#e6c177','#56a8ff','#fff','#2dd4a3','#ffb074'];
-new Chart($('#spendChart').getContext('2d'),{
-  type:'bar',
-  data:{
-    labels:sorted.map(s=>s[0]),
-    datasets:[{label:'JPY',data:sorted.map(s=>s[1]),backgroundColor:sorted.map((_,i)=>colors[i%colors.length]),borderRadius:6}]
-  },
-  options:{
-    plugins:{legend:{display:false},tooltip:{callbacks:{label:(c)=>`¥${Math.round(c.raw).toLocaleString()}`}}},
-    scales:{
-      x:{ticks:{color:'#8a8aa3'},grid:{display:false}},
-      y:{ticks:{color:'#8a8aa3',callback:v=>'¥'+(v/1000)+'k'},grid:{color:'#26263a'}}
-    }
-  }
-});
-
-function ym(d){ return d.slice(0,7) }
-const months = new Set();
-BUYS.forEach(b=>months.add(ym(b[0])));
-DEPOSITS.forEach(d=>months.add(ym(d[0])));
-WITHDRAWALS.forEach(w=>months.add(ym(w[0])));
-const sortedMonths = [...months].sort();
-const buyCounts = sortedMonths.map(m=>BUYS.filter(b=>ym(b[0])===m).length);
-const depCounts = sortedMonths.map(m=>DEPOSITS.filter(d=>ym(d[0])===m).length);
-const wdCounts = sortedMonths.map(m=>WITHDRAWALS.filter(w=>ym(w[0])===m).length);
-new Chart($('#timelineChart').getContext('2d'),{
-  type:'bar',
-  data:{
-    labels:sortedMonths,
-    datasets:[
-      {label:'Buys',data:buyCounts,backgroundColor:'#f0b90b',borderRadius:4},
-      {label:'Deposits',data:depCounts,backgroundColor:'#22c55e',borderRadius:4},
-      {label:'Withdrawals',data:wdCounts,backgroundColor:'#ef4444',borderRadius:4},
-    ]
-  },
-  options:{
-    plugins:{legend:{labels:{color:'#8a8aa3',font:{size:11}}}},
-    scales:{
-      x:{stacked:true,ticks:{color:'#8a8aa3',font:{size:10}},grid:{display:false}},
-      y:{stacked:true,ticks:{color:'#8a8aa3',stepSize:1},grid:{color:'#26263a'}}
-    }
-  }
-});
-</script>
+<footer>
+  <p><b>Source data.</b> Tiles reconstruct each account from email signals (signup, deposit, withdrawal, OTP, statements). Detailed dashboards require either a CSV export from the exchange or screen-scraped data. Binance is currently the only one with a full reconciled dashboard — based on the Spot Trade History + Transaction History CSVs you exported.</p>
+  <p><b>Privacy.</b> This repository is public so GitHub Pages can serve it for free. Real account numbers, full wallet addresses, and exact balances are visible. Move to a passworded host (Vercel / Cloudflare Access) if that changes.</p>
+</footer>
 </body>
 </html>

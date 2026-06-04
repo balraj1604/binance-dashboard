@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Binance — Personal Activity Dashboard v2</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<style>
+  :root{
+    --bg:#0a0a0c; --panel:#13131a; --panel2:#1b1b25; --line:#26263a;
+    --text:#e9e9f1; --mute:#8a8aa3; --accent:#f0b90b;
+    --green:#22c55e; --red:#ef4444; --blue:#3b82f6;
+    --mono:'JetBrains Mono', SFMono-Regular, ui-monospace, monospace;
+    --sans:-apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.5}
+  body{min-height:100vh;padding:32px 28px 80px;max-width:1400px;margin:0 auto}
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:24px;margin-bottom:28px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand-mark{width:34px;height:34px;background:var(--accent);border-radius:8px;display:grid;place-items:center;color:#0a0a0c;font-weight:900;font-family:var(--mono);font-size:18px}
+  h1{font-size:24px;font-weight:700;margin:0;letter-spacing:-0.01em}
+  .sub{color:var(--mute);font-size:13px;margin-top:2px}
+  .meta{font-family:var(--mono);font-size:12px;color:var(--mute);text-align:right}
+  .meta b{color:var(--text);font-weight:500}
+  .ver{display:inline-block;font-family:var(--mono);font-size:10px;background:rgba(34,197,94,0.15);color:var(--green);padding:2px 7px;border-radius:5px;letter-spacing:0.04em;margin-left:8px;vertical-align:middle}
+  .balance-card{background:linear-gradient(135deg,rgba(240,185,11,0.08),rgba(247,147,26,0.04));border:1px solid rgba(240,185,11,0.3);border-radius:14px;padding:22px 24px;margin-bottom:22px}
+  .balance-card h2{color:var(--accent);margin:0 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;font-weight:700}
+  .balance-card .reported{font-family:var(--mono);font-size:28px;font-weight:700;letter-spacing:-0.01em}
+  .balance-card .reported small{font-size:14px;color:var(--mute);margin-left:10px;font-weight:500}
+  .recon{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px;font-size:12px}
+  .recon div{padding:10px 12px;background:rgba(255,255,255,0.03);border-radius:8px;border-left:3px solid var(--accent)}
+  .recon div.in{border-left-color:var(--green)}
+  .recon div.out{border-left-color:var(--red)}
+  .recon div.net{border-left-color:var(--blue)}
+  .recon span{display:block;color:var(--mute);font-size:11px;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em}
+  .recon b{font-family:var(--mono);font-weight:700;font-size:16px}
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;position:relative;overflow:hidden}
+  .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent)}
+  .kpi.green::before{background:var(--green)}
+  .kpi.red::before{background:var(--red)}
+  .kpi.blue::before{background:var(--blue)}
+  .kpi label{display:block;color:var(--mute);font-size:11px;text-transform:uppercase;letter-spacing:0.07em;font-weight:600;margin-bottom:6px}
+  .kpi .val{font-family:var(--mono);font-size:22px;font-weight:700;letter-spacing:-0.02em}
+  .kpi .val small{font-size:13px;color:var(--mute);font-weight:500;margin-left:6px}
+  .kpi .hint{color:var(--mute);font-size:11.5px;margin-top:6px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+  .row.wide{grid-template-columns:1.5fr 1fr}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+  .card h2{font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:var(--mute);margin:0 0 14px;font-weight:700;display:flex;align-items:baseline;gap:8px}
+  .card h2 .count{color:var(--accent);font-family:var(--mono);font-weight:600}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  thead th{text-align:left;color:var(--mute);font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;padding:7px 8px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:1}
+  tbody td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle}
+  tbody tr:hover{background:rgba(240,185,11,0.04)}
+  .mono{font-family:var(--mono);font-size:12px}
+  .small{color:var(--mute);font-size:11px}
+  .asset{display:inline-flex;align-items:center;gap:4px;font-weight:700;font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:5px;background:rgba(240,185,11,0.12);color:var(--accent);letter-spacing:0.02em}
+  .asset.BTC{background:rgba(247,147,26,0.14);color:#f7931a}
+  .asset.ETH{background:rgba(98,126,234,0.14);color:#8aa1ff}
+  .asset.BNB{background:rgba(240,185,11,0.14);color:var(--accent)}
+  .asset.XRP{background:rgba(255,255,255,0.08);color:#fff}
+  .asset.ADA{background:rgba(0,114,206,0.18);color:#56a8ff}
+  .asset.SOL{background:rgba(157,73,247,0.18);color:#c39cff}
+  .asset.DOGE{background:rgba(195,154,69,0.18);color:#e6c177}
+  .asset.SHIB{background:rgba(255,140,80,0.18);color:#ffb074}
+  .asset.BUSD,.asset.USDT,.asset.JPY{background:rgba(0,194,138,0.16);color:#2dd4a3}
+  .asset.IOST{background:rgba(150,150,200,0.16);color:#bfbfeb}
+  .asset.AVAX{background:rgba(232,65,66,0.18);color:#ff7878}
+  .asset.OGN{background:rgba(138,138,180,0.18);color:#bbb}
+  .pill{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;font-family:var(--mono);margin-left:4px}
+  .pill.in{background:rgba(34,197,94,0.15);color:var(--green)}
+  .pill.out{background:rgba(239,68,68,0.15);color:var(--red)}
+  .pill.buy{background:rgba(240,185,11,0.18);color:var(--accent)}
+  .pill.sell{background:rgba(239,68,68,0.18);color:var(--red)}
+  .chart-wrap{position:relative;height:280px}
+  .chart-wrap.tall{height:340px}
+  .scroll{max-height:480px;overflow:auto}
+  .scroll::-webkit-scrollbar{width:6px}
+  .scroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+  .footer{margin-top:32px;color:var(--mute);font-size:12px;line-height:1.7;border-top:1px solid var(--line);padding-top:18px}
+  .footer b{color:var(--text)}
+  .footer p{margin:0 0 8px}
+  .footer ul{margin:6px 0 12px;padding-left:20px}
+  .footer li{margin:2px 0}
+  @media (max-width:1100px){
+    .recon,.kpi-grid{grid-template-columns:repeat(2,1fr)}
+    .row,.row.wide{grid-template-columns:1fr}
+  }
+  @media (max-width:680px){
+    body{padding:16px 12px}
+    .recon,.kpi-grid{grid-template-columns:1fr}
+    h1{font-size:18px}
+    .meta{text-align:left}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">B</div>
+    <div>
+      <h1>Binance Activity Dashboard<span class="ver">v2 · CSV-grade</span></h1>
+      <div class="sub">Full reconstruction from official CSV exports + email trail</div>
+    </div>
+  </div>
+  <div class="meta">
+    Account opened <b>2021-02-16</b><br>
+    Reporting through <b>2026-06-04</b><br>
+    <b>48 spot trades</b> + <b>4,987 ledger rows</b> + <b>33 emails</b>
+  </div>
+</header>
+
+<div class="balance-card">
+  <h2>Reported balance ↔ Reconstructed flows</h2>
+  <div class="reported">0.37741816 BTC <small>≈ $24,062.18 as shown by Binance</small></div>
+  <div class="recon">
+    <div class="in"><span>JPY deposited</span><b>¥5,790,000</b></div>
+    <div class="in"><span>BTC bought (spot)</span><b>~0.425 BTC</b></div>
+    <div class="out"><span>BTC withdrawn</span><b>−0.085 BTC</b></div>
+    <div class="net"><span>Net + yields/converts</span><b>≈ 0.377 BTC ✓</b></div>
+  </div>
+  <div class="sub" style="margin-top:14px">
+    <b style="color:var(--text)">It checks out.</b> You DCA'd <b>¥5.79M JPY</b> across 5 deposits (Jan/Feb/May/Nov/Dec 2025), accumulating <b>0.400 BTC</b> via 31 BTCJPY market buys. Add 2021 USDT→BTC trades + card buys, subtract 0.085 BTC withdrawn, plus migration converts + Simple Earn yields → reconciles to <b>0.377 BTC</b>.
+  </div>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi"><label>Total JPY deposited</label><div class="val">¥5,790,000</div><div class="hint">≈ $38,600 across 5 wires</div></div>
+  <div class="kpi green"><label>BTC acquired (lifetime)</label><div class="val">~0.44 BTC</div><div class="hint">JPY + USDT + BUSD + cards + sells</div></div>
+  <div class="kpi"><label>Avg BTC buy price</label><div class="val" id="avgPx"></div><div class="hint">Weighted by JPY notional</div></div>
+  <div class="kpi blue"><label>Simple Earn yields</label><div class="val">5 coins</div><div class="hint">DOGE / ADA / XRP / BNB / ETH (2022–23)</div></div>
+</div>
+
+<div class="row wide">
+  <div class="card">
+    <h2>BTC cumulative position <span class="count">2021 → today</span></h2>
+    <div class="chart-wrap tall"><canvas id="cumBTC"></canvas></div>
+  </div>
+  <div class="card">
+    <h2>JPY deposits by month <span class="count">¥5.79M total</span></h2>
+    <div class="chart-wrap tall"><canvas id="jpyDep"></canvas></div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:14px">
+  <h2>All spot trades <span class="count">48 lifetime</span></h2>
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr><th>Time</th><th>Pair</th><th>Side</th><th class="mono">Price</th><th>Executed</th><th>Amount</th><th>Fee</th></tr>
+      </thead>
+      <tbody id="spotBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="row">
+  <div class="card">
+    <h2>Simple Earn / Staking yields <span class="count">total received</span></h2>
+    <table>
+      <thead><tr><th>Asset</th><th class="mono">2022</th><th class="mono">2023</th><th class="mono">Total</th></tr></thead>
+      <tbody id="yieldsBody"></tbody>
+    </table>
+    <div class="small" style="margin-top:10px">From 2,111 Flexible Interest payouts + 661 Staking Rewards + 1 Distribution. Yields drop off late 2023 — pre-Japan migration only.</div>
+  </div>
+  <div class="card">
+    <h2>BTC by acquisition source <span class="count">cumulative</span></h2>
+    <div class="chart-wrap"><canvas id="btcSrc"></canvas></div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:14px">
+  <h2>Withdrawals <span class="count">CSV + email-derived</span></h2>
+  <table>
+    <thead><tr><th>Time</th><th>Asset</th><th class="mono">Amount</th><th>Address / Notes</th></tr></thead>
+    <tbody id="wdBody"></tbody>
+  </table>
+</div>
+
+<div class="card" style="margin-bottom:14px">
+  <h2>Card buys (Binance global, pre-migration) <span class="count">17 buys · Feb–May 2021</span></h2>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Date (Dubai)</th><th>Asset</th><th class="mono">Amount</th><th>Spent</th><th>Rate</th><th>Fee</th></tr></thead>
+      <tbody id="cardBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:14px">
+  <h2>Convert trades <span class="count">dust sweep · Dec 2023 migration</span></h2>
+  <table>
+    <thead><tr><th>Time</th><th>Pair</th><th class="mono">From</th><th class="mono">To</th><th>Rate (1 BTC)</th></tr></thead>
+    <tbody id="convertBody"></tbody>
+  </table>
+  <div class="small" style="margin-top:10px">Pre-migration cleanup recovered ~0.0000251 BTC. The bulk of the impermissible-token consolidation would need a full Convert History CSV to reconstruct.</div>
+</div>
+
+<div class="footer">
+  <p><b>What's in here.</b> Two CSVs exported from Binance Japan (Spot Trade History + Transaction History) + Binance global emails (2021–2023) + Convert History screenshot.</p>
+  <p><b>What's still missing.</b></p>
+  <ul>
+    <li><b>Futures P&L</b> — API key had Futures access (Dec 2024). Export from Derivatives → Order History.</li>
+    <li><b>Full Convert History</b> — only 4 trades captured; export the full CSV from Orders → Convert History.</li>
+    <li><b>Simple Earn 2024–2026 yields</b> — TX log shows yields ending 2023. May need a separate Earn export.</li>
+    <li><b>Pre-2022 transaction history</b> — TX log starts 2022-02-02; earliest trades only in Spot CSV.</li>
+  </ul>
+  <p><b>Cost basis.</b> JPY-weighted average BTC purchase price: see KPI above. Pre-2022 USDT trades: ~$882 for 0.0197 BTC (avg ~$44,700/BTC).</p>
+</div>
+
+<script>
+const SPOT = [
+["2026-02-03 23:26:11","BTCJPY","BUY",11632415,0.037825,"BTC",439996.097375,"JPY",0,"BNB"],
+["2026-01-31 22:21:24","BTCJPY","BUY",12129833,0.013079,"BTC",158646.085807,"JPY",0,"BNB"],
+["2026-01-31 22:21:24","BTCJPY","BUY",12129833,0.023195,"BTC",281351.476435,"JPY",0,"BNB"],
+["2025-11-21 00:21:08","BTCJPY","BUY",13698494,0.000015,"BTC",205.47741,"JPY",0,"BNB"],
+["2025-11-21 00:21:08","BTCJPY","BUY",13698491,0.008,"BTC",109587.928,"JPY",0,"BNB"],
+["2025-11-21 00:21:08","BTCJPY","BUY",13701460,0.013967,"BTC",191368.29182,"JPY",0,"BNB"],
+["2025-11-21 00:21:08","BTCJPY","BUY",13698492,0.0072,"BTC",98629.1424,"JPY",0,"BNB"],
+["2025-11-21 00:21:08","BTCJPY","BUY",13700357,0.00001,"BTC",137.00357,"JPY",0,"BNB"],
+["2025-11-21 00:21:08","BTCJPY","BUY",13696870,0.00001,"BTC",136.9687,"JPY",0,"BNB"],
+["2025-11-13 20:25:20","BTCJPY","BUY",15587875,0.017461,"BTC",272179.885375,"JPY",0,"BNB"],
+["2025-11-13 20:25:20","BTCJPY","BUY",15587875,0.004992,"BTC",77814.672,"JPY",0,"BNB"],
+["2025-11-04 22:24:27","BTCJPY","BUY",15469356,0.006464,"BTC",99993.917184,"JPY",0,"BNB"],
+["2025-11-04 12:44:19","BTCJPY","BUY",16079621,0.003109,"BTC",49991.541689,"JPY",0,"BNB"],
+["2025-11-04 10:35:30","BTCJPY","BUY",16119905,0.015508,"BTC",249987.48674,"JPY",0,"BNB"],
+["2025-10-30 23:56:28","BTCJPY","BUY",16465679,0.005,"BTC",82328.395,"JPY",0,"BNB"],
+["2025-10-30 23:56:28","BTCJPY","BUY",16465680,0.000007,"BTC",115.25976,"JPY",0,"BNB"],
+["2025-10-30 23:56:28","BTCJPY","BUY",16466796,0.005,"BTC",82333.98,"JPY",0,"BNB"],
+["2025-10-30 23:56:28","BTCJPY","BUY",16468176,0.032493,"BTC",535100.442768,"JPY",0,"BNB"],
+["2025-10-30 23:56:28","BTCJPY","BUY",16466797,0.003036,"BTC",49993.195692,"JPY",0,"BNB"],
+["2025-10-30 23:56:28","BTCJPY","BUY",16466940,0.000007,"BTC",115.26858,"JPY",0,"BNB"],
+["2025-03-07 03:54:04","BTCJPY","BUY",13366014,0.058,"BTC",775228.812,"JPY",0.00656108,"BNB"],
+["2025-03-07 03:54:04","BTCJPY","BUY",13366015,0.009334,"BTC",124758.38401,"JPY",0.00105542,"BNB"],
+["2025-02-03 09:04:47","BTCJPY","BUY",14542855,0.024781,"BTC",360386.489755,"JPY",0.00317204,"BNB"],
+["2025-02-03 09:04:47","BTCJPY","BUY",14542974,0.014479,"BTC",210567.720546,"JPY",0.00185355,"BNB"],
+["2025-02-03 09:04:47","BTCJPY","BUY",14542855,0.001997,"BTC",29042.081435,"JPY",0.00025601,"BNB"],
+["2025-01-29 18:00:03","BTCJPY","BUY",15853037,0.012766,"BTC",202379.870342,"JPY",0.00146355,"BNB"],
+["2025-01-29 18:00:03","BTCJPY","BUY",15853666,0.007245,"BTC",114859.81017,"JPY",0.00083091,"BNB"],
+["2025-01-29 18:00:03","BTCJPY","BUY",15853196,0.021,"BTC",332917.116,"JPY",0.00240678,"BNB"],
+["2025-01-29 18:00:03","BTCJPY","BUY",15853527,0.047919,"BTC",759685.160313,"JPY",0.00549204,"BNB"],
+["2025-01-29 18:00:03","BTCJPY","BUY",15853197,0.005687,"BTC",90157.131339,"JPY",0.00065211,"BNB"],
+["2025-01-27 07:14:29","BTCJPY","BUY",15852507,0.00063,"BTC",9987.07941,"JPY",0.00007248,"BNB"],
+["2021-11-17 16:07:12","ETHUSDT","BUY",4239.53,0.1302,"ETH",551.986806,"USDT",0.00070966,"BNB"],
+["2021-10-28 22:39:51","BTCUSDT","BUY",58000.47,0.00344,"BTC",199.5216168,"USDT",0.00031125,"BNB"],
+["2021-09-23 18:48:01","XRPUSDT","BUY",0.9952,251,"XRP",249.7952,"USDT",0.00049584,"BNB"],
+["2021-09-22 01:17:54","BTCUSDT","BUY",40087.88,0.00456,"BTC",182.8007328,"USDT",0.00039924,"BNB"],
+["2021-09-21 04:11:37","AVAXUSDT","BUY",55,3.63,"AVAX",199.65,"USDT",0.00041868,"BNB"],
+["2021-09-21 04:09:51","SOLUSDT","BUY",130,0.26,"SOL",33.8,"USDT",0.00007093,"BNB"],
+["2021-09-21 04:09:51","SOLUSDT","BUY",130,0.89,"SOL",115.7,"USDT",0.00024283,"BNB"],
+["2021-09-21 03:25:39","BTCUSDT","BUY",42732.22,0.0117,"BTC",499.966974,"USDT",0.00104426,"BNB"],
+["2021-09-20 18:07:16","SOLUSDT","BUY",145,1.37,"SOL",198.65,"USDT",0.00040164,"BNB"],
+["2021-04-09 09:56:54","OGNBTC","SELL",0.00005394,22,"OGN",0.00118668,"BTC",0.00012581,"BNB"],
+["2021-04-09 09:56:54","OGNBTC","SELL",0.00005394,39,"OGN",0.00210366,"BTC",0.00022203,"BNB"],
+["2021-03-05 04:43:59","IOSTUSDT","BUY",0.042286,1387,"IOST",58.650682,"USDT",0.00020171,"BNB"],
+["2021-03-04 20:17:19","OGNUSDT","BUY",0.5094,30.07,"OGN",15.317658,"USDT",0.00004835,"BNB"],
+["2021-03-04 20:17:02","OGNUSDT","BUY",0.5096,30,"OGN",15.288,"USDT",0.00004815,"BNB"],
+["2021-03-04 19:01:10","IOSTBUSD","BUY",0.04752,1882.2,"IOST",89.442144,"BUSD",0,"BNB"],
+["2021-02-28 19:26:23","BTCBUSD","BUY",43804.51,0.002054,"BTC",89.97446354,"BUSD",0.00033326,"BNB"],
+["2021-02-27 04:04:34","DOGEBTC","BUY",0.00000109,91,"DOGE",0.00009919,"BTC",0.091,"DOGE"],
+];
+const YIELDS = {
+  BNB:[0.018831,0.004309,0.023140],
+  XRP:[0.866492,0.143940,1.010432],
+  DOGE:[28.079720,7.207373,35.287094],
+  ADA:[9.848963,3.542663,13.391626],
+  ETH:[0.003686,0.000712,0.004397],
+};
+const JPY_DEP = {"2025-01":1510000,"2025-02":1500000,"2025-05":1500000,"2025-11":400000,"2025-12":880000};
+const WITHDRAWS = [
+  ["2021-03-15 19:56","DOGE",6.4,"0x8015...8cdb","DOGE → EVM (test)"],
+  ["2021-09-23 18:56","XRP",99.75,"rP1iLqb...AKKJ (Tag 7777777)",""],
+  ["2024-04-19 09:32","ETH",0.29642115,"0xC58c...7BF0",""],
+  ["2024-04-23 01:11","SOL",2.54127538,"9Ji8J37ec...xdaM",""],
+  ["2025-01-27 10:40","XRP",10.0,"rJn2zAPd...3apQh","→ Bybit"],
+  ["2025-01-28 06:34","BTC",0.00011,"bc1qn4...kkfh","tiny test"],
+  ["2025-05-19 19:24","BTC",0.0000096,"1GpNZ2...5esE","dust test"],
+  ["2025-05-19 19:29","BTC",0.085,"1GpNZ2...5esE","real send"],
+];
+const CARDBUYS = [
+  ["2021-02-26 21:35","XRP",34.1,"1,700 JPY","48.86 JPY/XRP","34 JPY"],
+  ["2021-02-27 09:24","DOGE",274,"15 USD","0.0536 USD/DOGE","0.31 USD"],
+  ["2021-02-28 16:21","BNB",0.12,"3,000 JPY","24,500 JPY/BNB","60 JPY"],
+  ["2021-02-28 19:23","BUSD",90.16,"10,000 JPY","108.69 JPY/BUSD","200 JPY"],
+  ["2021-02-28 20:05","BUSD",90.16,"10,000 JPY","108.69 JPY/BUSD","200 JPY"],
+  ["2021-03-04 20:13","USDT",89.28,"10,000 JPY","109.76 JPY/USDT","200 JPY"],
+  ["2021-03-15 19:18","DOGE",845,"50 USD","0.058 USD/DOGE","1 USD"],
+  ["2021-04-17 21:22","DOGE",171,"50 USD","0.287 USD/DOGE","1 USD"],
+  ["2021-04-17 21:25","BTC",0.002183,"15,000 JPY","6,733,852 JPY/BTC","300 JPY"],
+  ["2021-05-05 18:11","DOGE",21.9,"15 USD","0.671 USD/DOGE","0.31 USD"],
+  ["2021-05-07 19:13","DOGE",797.2,"500 USD","0.615 USD/DOGE","10 USD"],
+  ["2021-05-13 18:54","ADA",51.5,"100 USD","1.903 USD/ADA","2 USD"],
+  ["2021-05-13 18:56","SHIB",2353299,"50 USD","0.0000208 USD/SHIB","1 USD"],
+  ["2021-05-19 16:18","ETH",0.15981,"50,000 JPY","306,614 JPY/ETH","1,000 JPY"],
+  ["2021-05-19 16:21","BTC",0.012413,"500 USD","39,474 USD/BTC","10 USD"],
+  ["2021-05-19 16:29","BNB",0.4421,"20,000 JPY","44,334 JPY/BNB","400 JPY"],
+  ["2021-05-21 16:12","ADA",112.91,"200 USD","1.736 USD/ADA","4 USD"],
+];
+const CONVERTS = [
+  ["2023-12-19 15:00","DON→BTC","0.18966674 DON","0.00000001 BTC","18,966,658.5 DON"],
+  ["2023-12-14 18:46","SOLO→BTC","0.75349478 SOLO","0.00000115 BTC","655,737.7 SOLO"],
+  ["2023-12-14 18:24","ETHW→BTC","0.29325111 ETHW","0.00001861 BTC","15,760 ETHW"],
+  ["2023-12-11 21:01","USDT→BTC","0.22418418 USDT","0.00000534 BTC","41,955.7 USDT"],
+];
+
+// DOM helpers — no innerHTML
+const $ = (s) => document.querySelector(s);
+function el(tag, attrs, ...kids){
+  const n = document.createElement(tag);
+  if (attrs) for (const [k,v] of Object.entries(attrs)){
+    if (k==='class') n.className = v;
+    else if (k==='text') n.textContent = v;
+    else n.setAttribute(k,v);
+  }
+  for (const k of kids){
+    if (k==null) continue;
+    n.appendChild(typeof k==='string'||typeof k==='number' ? document.createTextNode(String(k)) : k);
+  }
+  return n;
+}
+function assetSpan(a){ return el('span',{class:`asset ${a}`,text:a}); }
+function pill(text,cls){ return el('span',{class:`pill ${cls}`,text}); }
+function fmt(n,max=8){
+  if (n===0||n==null) return '0';
+  if (Math.abs(n)>=10000) return n.toLocaleString('en-US',{maximumFractionDigits:0});
+  if (Math.abs(n)>=1) return n.toLocaleString('en-US',{maximumFractionDigits:max});
+  return n.toLocaleString('en-US',{maximumFractionDigits:8});
+}
+
+// Spot table
+const spotBody = $('#spotBody');
+SPOT.forEach(r=>{
+  const [t,pair,side,px,qty,qa,amt,aa,fee,fa] = r;
+  spotBody.appendChild(el('tr',null,
+    el('td',{class:'mono small',text:t}),
+    el('td',{class:'mono',text:pair}),
+    el('td',null,pill(side,side==='BUY'?'buy':'sell')),
+    el('td',{class:'mono',text:fmt(px,2)}),
+    el('td',null,el('span',{class:'mono',text:fmt(qty)+' '}),assetSpan(qa)),
+    el('td',null,el('span',{class:'mono',text:fmt(amt,2)+' '}),assetSpan(aa)),
+    el('td',{class:'mono small',text:fee>0?fmt(fee)+' '+fa:'—'})
+  ));
+});
+
+// Avg BTC price
+let jpySum=0, btcSum=0;
+SPOT.filter(r=>r[1]==='BTCJPY').forEach(r=>{ jpySum+=r[6]; btcSum+=r[4]; });
+const avgPx = jpySum/btcSum;
+const avgPxEl = $('#avgPx');
+avgPxEl.appendChild(document.createTextNode('¥'+Math.round(avgPx).toLocaleString()));
+avgPxEl.appendChild(el('small',{text:'/BTC'}));
+
+// Yields
+const yBody = $('#yieldsBody');
+Object.entries(YIELDS).forEach(([coin,[y22,y23,tot]])=>{
+  yBody.appendChild(el('tr',null,
+    el('td',null,assetSpan(coin)),
+    el('td',{class:'mono',text:fmt(y22)}),
+    el('td',{class:'mono',text:fmt(y23)}),
+    el('td',{class:'mono',text:fmt(tot)})
+  ));
+});
+
+// Withdrawals
+const wdBody = $('#wdBody');
+WITHDRAWS.forEach(([t,a,amt,addr,note])=>{
+  const addrTd = el('td',null,el('span',{class:'mono small',text:addr}));
+  if (note) addrTd.appendChild(el('div',{class:'small',text:note}));
+  wdBody.appendChild(el('tr',null,
+    el('td',{class:'mono small',text:t}),
+    el('td',null,assetSpan(a),pill('Out','out')),
+    el('td',{class:'mono',text:fmt(amt)}),
+    addrTd
+  ));
+});
+
+// Card buys
+const cardBody = $('#cardBody');
+CARDBUYS.forEach(([d,a,amt,sp,rate,fee])=>{
+  cardBody.appendChild(el('tr',null,
+    el('td',{class:'mono small',text:d}),
+    el('td',null,assetSpan(a)),
+    el('td',{class:'mono',text:fmt(amt)}),
+    el('td',{class:'mono small',text:sp}),
+    el('td',{class:'mono small',text:rate}),
+    el('td',{class:'mono small',text:fee})
+  ));
+});
+
+// Converts
+const convertBody = $('#convertBody');
+CONVERTS.forEach(([t,pair,from,to,rate])=>{
+  convertBody.appendChild(el('tr',null,
+    el('td',{class:'mono small',text:t}),
+    el('td',{class:'mono',text:pair}),
+    el('td',{class:'mono small',text:from}),
+    el('td',{class:'mono small',text:to}),
+    el('td',{class:'mono small',text:rate})
+  ));
+});
+
+// Charts
+const btcEvents = [];
+SPOT.forEach(r=>{
+  const [t,pair,side,,qty,qa,amt,aa] = r;
+  if (qa==='BTC') btcEvents.push([t, side==='BUY'?qty:-qty]);
+  if (aa==='BTC' && side==='SELL') btcEvents.push([t, amt]);
+});
+WITHDRAWS.filter(w=>w[1]==='BTC').forEach(w=>btcEvents.push([w[0], -w[2]]));
+CARDBUYS.filter(c=>c[1]==='BTC').forEach(c=>btcEvents.push([c[0], c[2]]));
+btcEvents.sort((a,b)=>a[0].localeCompare(b[0]));
+let running = 0;
+const cumLabels = [], cumData = [];
+btcEvents.forEach(([t,d])=>{
+  running += d;
+  cumLabels.push(t.slice(0,10));
+  cumData.push(running);
+});
+new Chart($('#cumBTC').getContext('2d'),{
+  type:'line',
+  data:{labels:cumLabels,datasets:[{label:'Cumulative BTC',data:cumData,borderColor:'#f7931a',backgroundColor:'rgba(247,147,26,0.18)',fill:true,tension:0.18,pointRadius:2,pointHoverRadius:5}]},
+  options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:(c)=>c.raw.toFixed(6)+' BTC'}}},scales:{x:{ticks:{color:'#8a8aa3',maxTicksLimit:8,font:{size:10}},grid:{display:false}},y:{ticks:{color:'#8a8aa3',callback:v=>v.toFixed(2)+' BTC'},grid:{color:'#26263a'}}}}
+});
+
+const months = Object.keys(JPY_DEP).sort();
+new Chart($('#jpyDep').getContext('2d'),{
+  type:'bar',
+  data:{labels:months,datasets:[{label:'JPY Deposit',data:months.map(m=>JPY_DEP[m]),backgroundColor:'#22c55e',borderRadius:6}]},
+  options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:(c)=>'¥'+c.raw.toLocaleString()}}},scales:{x:{ticks:{color:'#8a8aa3'},grid:{display:false}},y:{ticks:{color:'#8a8aa3',callback:v=>'¥'+(v/1e6).toFixed(1)+'M'},grid:{color:'#26263a'}}}}
+});
+
+const bySrc = {'JPY (2025-26)':0,'USDT/BUSD (2021)':0,'Card (2021)':0,'OGN sells':0,'DOGE→BTC':0};
+SPOT.forEach(r=>{
+  const [t,pair,side,,qty,qa,amt,aa] = r;
+  if (pair==='BTCJPY' && qa==='BTC') bySrc['JPY (2025-26)']+=qty;
+  else if ((pair==='BTCUSDT'||pair==='BTCBUSD') && qa==='BTC') bySrc['USDT/BUSD (2021)']+=qty;
+  else if (pair==='OGNBTC' && side==='SELL') bySrc['OGN sells']+=amt;
+  else if (pair==='DOGEBTC' && qa==='DOGE') bySrc['DOGE→BTC']+=amt;
+});
+CARDBUYS.filter(c=>c[1]==='BTC').forEach(c=>bySrc['Card (2021)']+=c[2]);
+
+new Chart($('#btcSrc').getContext('2d'),{
+  type:'doughnut',
+  data:{labels:Object.keys(bySrc),datasets:[{data:Object.values(bySrc),backgroundColor:['#f0b90b','#22c55e','#8aa1ff','#bbb','#e6c177'],borderColor:'#13131a',borderWidth:2}]},
+  options:{plugins:{legend:{labels:{color:'#e9e9f1',font:{size:11},padding:8}},tooltip:{callbacks:{label:(c)=>c.label+': '+c.raw.toFixed(6)+' BTC'}}},cutout:'58%'}
+});
+</script>
+</body>
+</html>
