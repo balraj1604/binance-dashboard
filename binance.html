@@ -102,20 +102,34 @@
   <div class="brand">
     <div class="brand-mark">B</div>
     <div>
-      <h1>Binance Activity Dashboard<span class="ver">v2 · CSV-grade</span></h1>
-      <div class="sub">Full reconstruction from official CSV exports + email trail</div>
+      <h1>Binance Activity Dashboard<span class="ver">v3 · audit-complete</span></h1>
+      <div class="sub">Full reconstruction from CSV exports + email audit · refreshed 2026-06-04</div>
     </div>
   </div>
   <div class="meta">
     Account opened <b>2021-02-16</b><br>
-    Reporting through <b>2026-06-04</b><br>
-    <b>48 spot trades</b> + <b>4,987 ledger rows</b> + <b>33 emails</b>
+    Reporting through <b>2026-06-04 12:20 GST</b><br>
+    <b>48 spot trades</b> + <b>4,987 ledger rows</b> + <b>~200 emails</b>
   </div>
 </header>
 
+<!-- Today's activity -->
+<div class="card" style="margin-bottom:18px;border:1px solid rgba(34,197,94,0.35);background:linear-gradient(135deg,rgba(34,197,94,0.06),transparent)">
+  <h2 style="color:var(--green)">🟢 Live activity — today (2026-06-04) <span class="count">Bybit → Binance consolidation</span></h2>
+  <table>
+    <thead><tr><th>Time (Dubai)</th><th>Asset</th><th class="mono">Amount</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="mono small">12:20</td><td><span class="asset BTC">BTC</span><span class="pill in">In</span></td><td class="mono">0.00152756</td><td class="small">Bybit withdrawal received (was Pending → Confirmed)</td></tr>
+      <tr><td class="mono small">11:56</td><td><span class="asset">TRUMP</span><span class="pill in">In</span></td><td class="mono">8.88031</td><td class="small">Bybit withdrawal received — TRUMP balance you didn't know was there</td></tr>
+      <tr><td class="mono small">11:56</td><td><span class="asset XRP">XRP</span><span class="pill in">In</span></td><td class="mono">9.6</td><td class="small">Bybit withdrawal received (the 9.8 sent on 2025-01-27 came back as 9.6 after Bybit had it)</td></tr>
+    </tbody>
+  </table>
+  <div class="small" style="margin-top:10px">You're actively pulling everything out of Bybit JP (close-only mode, full liquidation by Jul 22 2026) into Binance Japan. Smart move.</div>
+</div>
+
 <div class="balance-card">
   <h2>Reported balance ↔ Reconstructed flows</h2>
-  <div class="reported">0.37741816 BTC <small>≈ $24,062.18 as shown by Binance</small></div>
+  <div class="reported">0.37741816 BTC <small>≈ $24,062.18 as shown by Binance (pre-today's deposits)</small></div>
   <div class="recon">
     <div class="in"><span>JPY deposited</span><b>¥5,790,000</b></div>
     <div class="in"><span>BTC bought (spot)</span><b>~0.425 BTC</b></div>
