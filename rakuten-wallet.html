@@ -4,12 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Rakuten Wallet — Activity Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <style>
   :root{
     --bg:#0a0a0c; --panel:#13131a; --panel2:#1b1b25; --line:#26263a;
     --text:#e9e9f1; --mute:#8a8aa3;
     --rakuten:#bf0000;
-    --green:#22c55e; --red:#ef4444; --blue:#3b82f6; --amber:#f59e0b;
+    --green:#22c55e; --red:#ef4444; --blue:#3b82f6; --amber:#f59e0b; --gold:#f7931a;
     --mono:'JetBrains Mono', SFMono-Regular, ui-monospace, monospace;
     --sans:-apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
   }
@@ -23,16 +24,25 @@
   .sub{color:var(--mute);font-size:13px;margin-top:2px}
   .meta{font-family:var(--mono);font-size:12px;color:var(--mute);text-align:right}
   .meta b{color:var(--text);font-weight:500}
-  .ver{display:inline-block;font-family:var(--mono);font-size:10px;background:rgba(239,68,68,0.18);color:var(--red);padding:2px 7px;border-radius:5px;letter-spacing:0.04em;margin-left:8px;vertical-align:middle}
+  .ver{display:inline-block;font-family:var(--mono);font-size:10px;background:rgba(34,197,94,0.18);color:var(--green);padding:2px 7px;border-radius:5px;letter-spacing:0.04em;margin-left:8px;vertical-align:middle}
   .back{color:var(--mute);text-decoration:none;font-family:var(--mono);font-size:12px;display:inline-block;margin-bottom:8px}
   .back:hover{color:var(--text)}
 
-  .critical{background:linear-gradient(135deg,rgba(239,68,68,0.12),rgba(239,68,68,0.04));border:1px solid rgba(239,68,68,0.45);border-radius:14px;padding:22px 24px;margin-bottom:18px}
-  .critical h2{color:var(--red);margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:0.1em;font-weight:800}
-  .critical .lead{font-size:18px;font-weight:700;letter-spacing:-0.01em;line-height:1.4}
-  .critical .body{margin-top:10px;color:#e9e9f1;font-size:13.5px;line-height:1.6}
-  .critical b{color:var(--red)}
-  .critical ul{margin:8px 0 0 0;padding-left:20px}
+  .balance-card{background:linear-gradient(135deg,rgba(191,0,0,0.08),rgba(191,0,0,0.02));border:1px solid rgba(191,0,0,0.3);border-radius:14px;padding:22px 24px;margin-bottom:22px}
+  .balance-card h2{color:var(--rakuten);margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;font-weight:700}
+  .balance-card .lead{font-family:var(--mono);font-size:22px;font-weight:700;letter-spacing:-0.01em;line-height:1.3}
+  .balance-card .lead small{font-size:13px;color:var(--mute);font-weight:500;display:block;margin-top:6px;line-height:1.5}
+  .recon{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px;font-size:12px}
+  .recon div{padding:10px 12px;background:rgba(255,255,255,0.03);border-radius:8px;border-left:3px solid var(--rakuten)}
+  .recon div.in{border-left-color:var(--green)}
+  .recon div.out{border-left-color:var(--red)}
+  .recon div.net{border-left-color:var(--blue)}
+  .recon div.gold{border-left-color:var(--gold)}
+  .recon span{display:block;color:var(--mute);font-size:11px;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em}
+  .recon b{font-family:var(--mono);font-weight:700;font-size:15px}
+
+  .alert{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:13px;line-height:1.6}
+  .alert b{color:var(--amber)}
 
   .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
   .kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;position:relative;overflow:hidden}
@@ -40,13 +50,14 @@
   .kpi.green::before{background:var(--green)}
   .kpi.red::before{background:var(--red)}
   .kpi.amber::before{background:var(--amber)}
+  .kpi.gold::before{background:var(--gold)}
   .kpi label{display:block;color:var(--mute);font-size:11px;text-transform:uppercase;letter-spacing:0.07em;font-weight:600;margin-bottom:6px}
   .kpi .val{font-family:var(--mono);font-size:20px;font-weight:700;letter-spacing:-0.02em}
   .kpi .val small{font-size:12px;color:var(--mute);font-weight:500;margin-left:6px}
   .kpi .hint{color:var(--mute);font-size:11.5px;margin-top:6px}
 
   .row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
-  .row.wide{grid-template-columns:1.5fr 1fr}
+  .row.wide{grid-template-columns:1.6fr 1fr}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
   .card h2{font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:var(--mute);margin:0 0 14px;font-weight:700;display:flex;align-items:baseline;gap:8px}
   .card h2 .count{color:var(--rakuten);font-family:var(--mono);font-weight:600}
@@ -55,27 +66,27 @@
   thead th{text-align:left;color:var(--mute);font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;padding:7px 8px;border-bottom:1px solid var(--line);background:var(--panel)}
   tbody td{padding:9px 8px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle}
   tbody tr:hover{background:rgba(191,0,0,0.04)}
+  tbody tr.total{background:rgba(191,0,0,0.06);font-weight:700}
   .mono{font-family:var(--mono);font-size:12px}
   .small{color:var(--mute);font-size:11px}
-
+  .asset{display:inline-flex;align-items:center;gap:4px;font-weight:700;font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:5px;letter-spacing:0.02em}
+  .asset.BTC{background:rgba(247,147,26,0.14);color:#f7931a}
+  .asset.JPY{background:rgba(0,194,138,0.16);color:#2dd4a3}
   .pill{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;font-family:var(--mono);margin-left:4px}
   .pill.in{background:rgba(34,197,94,0.15);color:var(--green)}
+  .pill.buy{background:rgba(240,185,11,0.18);color:#f0b90b}
   .pill.warn{background:rgba(245,158,11,0.18);color:var(--amber)}
   .pill.alert{background:rgba(239,68,68,0.18);color:var(--red)}
-  .pill.signup{background:rgba(18,157,255,0.18);color:#56a8ff}
-  .pill.listing{background:rgba(167,139,250,0.18);color:#c4b5fd}
 
-  .scroll{max-height:420px;overflow:auto}
-  .scroll::-webkit-scrollbar{width:6px}
-  .scroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+  .chart-wrap{position:relative;height:280px}
 
   .footer{margin-top:32px;color:var(--mute);font-size:12px;line-height:1.7;border-top:1px solid var(--line);padding-top:18px}
   .footer b{color:var(--text)}
   .footer p{margin:0 0 8px}
   .footer ul{margin:6px 0 12px;padding-left:20px}
 
-  @media (max-width:1100px){ .kpi-grid{grid-template-columns:repeat(2,1fr)} .row,.row.wide{grid-template-columns:1fr} }
-  @media (max-width:680px){ body{padding:16px 12px} .kpi-grid{grid-template-columns:1fr} h1{font-size:18px} .meta{text-align:left} }
+  @media (max-width:1100px){ .kpi-grid,.recon{grid-template-columns:repeat(2,1fr)} .row,.row.wide{grid-template-columns:1fr} }
+  @media (max-width:680px){ body{padding:16px 12px} .kpi-grid,.recon{grid-template-columns:1fr} h1{font-size:18px} .meta{text-align:left} }
 </style>
 </head>
 <body>
@@ -86,118 +97,114 @@
   <div class="brand">
     <div class="brand-mark">R</div>
     <div>
-      <h1>Rakuten Wallet (楽天ウォレット)<span class="ver">v1 · access blocked</span></h1>
-      <div class="sub">Email-derived audit · refreshed 2026-06-04</div>
+      <h1>Rakuten Wallet (楽天ウォレット)<span class="ver">v2 · CSV-grade</span></h1>
+      <div class="sub">Tax CSV exports (2024 + 2025) · refreshed 2026-06-04</div>
     </div>
   </div>
   <div class="meta">
     Account opened <b>2024-08-08</b><br>
-    Last login <b>2025-11-20</b><br>
-    <b>50+ emails</b> scanned
+    Reporting through <b>2026-06-04</b><br>
+    <b>9 transactions</b> from 2 CSVs
   </div>
 </header>
 
-<div class="critical">
-  <h2>🚨 Your account is currently BLOCKED</h2>
-  <div class="lead">Rakuten Wallet permanently cut all overseas access on 2026-02-18.</div>
-  <div class="body">
-    On <b>Feb 5, 2026</b>, Rakuten Wallet emailed all users announcing that starting <b>Feb 18, 2026</b> (after scheduled maintenance), <b>all access from outside Japan would be permanently blocked</b> across every service — spot trading, margin trading, and web3 wallet. The block applies even to Japan-resident users who travel abroad.
-    <br><br>
-    <b>What this means for you:</b>
-    <ul>
-      <li>You're in Dubai. <b>You have not been able to log in for the past ~3.5 months</b> (since Feb 18, 2026).</li>
-      <li><b>VPN won't help</b> — Rakuten explicitly says they detect VPN traffic and block it as overseas access.</li>
-      <li>Whatever JPY or crypto you had in the account on Feb 18 is sitting there frozen.</li>
-      <li>Your last confirmed login was <b>2025-11-20</b>, 3 months before the block.</li>
-    </ul>
+<div class="balance-card">
+  <h2>Current Rakuten Wallet position</h2>
+  <div class="lead">
+    <span style="color:var(--gold)">0.06445622 BTC</span> + <span style="color:#2dd4a3">¥417,805 cash</span>
+    <small>Bought 4 lots of BTC at average <b>¥15.5M / BTC</b> (~$103k at the time). Today's BTC is ~¥10.5M (~$70k) → ~32% unrealized loss on BTC. Plus ¥417,805 JPY cash that was never invested.</small>
+  </div>
+  <div class="recon">
+    <div class="in"><span>Total JPY deposited</span><b>¥1,417,805</b></div>
+    <div class="gold"><span>BTC accumulated</span><b>0.0645 BTC</b></div>
+    <div class="net"><span>JPY still as cash</span><b>¥417,805</b></div>
+    <div class="net"><span>Today's value</span><b>~¥1.09M (~$7.3k)</b></div>
   </div>
 </div>
 
+<div class="alert">
+  <b>⚠ Re: overseas access block.</b> Rakuten Wallet's Feb 5 2026 email said all overseas access would be blocked from Feb 18 2026 — but you're clearly logged in from Dubai right now and got the CSVs. So either the block was relaxed, doesn't apply to you, or there's a workaround. Worth confirming you can still trade/withdraw, not just view.
+</div>
+
 <div class="kpi-grid">
-  <div class="kpi"><label>Account age</label><div class="val">1y 10m</div><div class="hint">Opened Aug 8, 2024 (Rakuten Bank linked)</div></div>
-  <div class="kpi green"><label>JPY deposits</label><div class="val">3 <small>events</small></div><div class="hint">Nov 22, Dec 20, Jan 10 (amounts not in email)</div></div>
-  <div class="kpi amber"><label>Last login</label><div class="val">2025-11-20</div><div class="hint">~3 months before access block</div></div>
-  <div class="kpi red"><label>Status</label><div class="val">BLOCKED</div><div class="hint">Cannot access from Dubai since 2026-02-18</div></div>
+  <div class="kpi gold"><label>BTC accumulated</label><div class="val">0.06446 <small>BTC</small></div><div class="hint">5 buys across 2024-2025 · ~$4,500 at today's price</div></div>
+  <div class="kpi"><label>Avg BTC cost basis</label><div class="val">¥15.51M <small>/BTC</small></div><div class="hint">≈ $103,400 — you bought at the top</div></div>
+  <div class="kpi green"><label>JPY cash sitting</label><div class="val">¥417,805 <small>~$2.8k</small></div><div class="hint">Deposited Jan 2025, never used</div></div>
+  <div class="kpi red"><label>Unrealized P&L on BTC</label><div class="val">-¥323k <small>~-$2.2k</small></div><div class="hint">~-32% on BTC at ¥10.5M today vs ¥15.5M cost</div></div>
 </div>
 
 <div class="row wide">
   <div class="card">
-    <h2>Account timeline <span class="count">key events</span></h2>
-    <div class="scroll">
-      <table>
-        <thead><tr><th>Date</th><th>Event</th></tr></thead>
-        <tbody>
-          <tr><td class="mono small">2024-08-08 07:28</td><td>Account application submitted<span class="pill signup">Signup</span></td></tr>
-          <tr><td class="mono small">2024-08-08 07:31</td><td>Rakuten Bank linked (KYC via bank verification)</td></tr>
-          <tr><td class="mono small">2024-08-08 07:33</td><td>Application complete</td></tr>
-          <tr><td class="mono small">2024-08-08 08:08</td><td>Spot trading account opened</td></tr>
-          <tr><td class="mono small">2024-08-09 10:02</td><td>Email verified via OTP (code: 664273)</td></tr>
-          <tr><td class="mono small">2024-08-09 15:02</td><td>First login</td></tr>
-          <tr><td class="mono small">2024-10-23</td><td>Web3 wallet service launched (new T&Cs)<span class="pill listing">Service</span></td></tr>
-          <tr><td class="mono small">2024-11-20</td><td>Easy login (2FA) disabled</td></tr>
-          <tr><td class="mono small">2024-11-22 13:46</td><td><b>JPY deposit completed</b><span class="pill in">In</span></td></tr>
-          <tr><td class="mono small">2024-11-22</td><td>⚠ Price discrepancy alert (7:00-16:40 JST trades)<span class="pill warn">Issue</span></td></tr>
-          <tr><td class="mono small">2024-12-20 23:36</td><td><b>JPY deposit completed</b><span class="pill in">In</span></td></tr>
-          <tr><td class="mono small">2025-01-10 17:17</td><td><b>JPY deposit completed</b><span class="pill in">In</span></td></tr>
-          <tr><td class="mono small">2025-02-19</td><td>OAS + POL listings added<span class="pill listing">Listing</span></td></tr>
-          <tr><td class="mono small">2025-08-26</td><td>ADA, DOT, SOL, AVAX, TRX added<span class="pill listing">Listing</span></td></tr>
-          <tr><td class="mono small">2025-11-19 23:16</td><td>Passkey (2FA) disabled</td></tr>
-          <tr><td class="mono small">2025-11-20 04:16</td><td><b>LAST RECORDED LOGIN</b></td></tr>
-          <tr><td class="mono small">2025-11-28</td><td>OAS delisted</td></tr>
-          <tr><td class="mono small">2026-02-05</td><td>⚠ Overseas access block announced<span class="pill alert">Critical</span></td></tr>
-          <tr><td class="mono small">2026-02-18</td><td>🔒 ALL OVERSEAS ACCESS PERMANENTLY BLOCKED<span class="pill alert">Blocked</span></td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-  <div class="card">
-    <h2>JPY deposits <span class="count">3 events</span></h2>
+    <h2>All transactions <span class="count">5 buys + 3 deposits</span></h2>
     <table>
-      <thead><tr><th>Date (JST)</th><th>Tx #</th><th class="mono">Amount</th></tr></thead>
+      <thead>
+        <tr><th>Date (JST)</th><th>Type</th><th>Pair</th><th class="mono">Got</th><th class="mono">Spent</th><th class="mono">Rate (JPY/BTC)</th></tr>
+      </thead>
       <tbody>
-        <tr><td class="mono small">2024-11-22 13:46</td><td class="mono small">2354487...749</td><td class="small">In app only</td></tr>
-        <tr><td class="mono small">2024-12-20 23:36</td><td class="mono small">2375078...717</td><td class="small">In app only</td></tr>
-        <tr><td class="mono small">2025-01-10 17:17</td><td class="mono small">2390107...749</td><td class="small">In app only</td></tr>
+        <tr><td class="mono small">2024-11-22 13:46</td><td><span class="pill in">Deposit</span></td><td><span class="asset JPY">JPY</span></td><td class="mono">¥400,000</td><td class="mono small">—</td><td class="mono small">—</td></tr>
+        <tr><td class="mono small">2024-11-22 13:49</td><td><span class="pill buy">Buy</span></td><td>BTC/JPY</td><td class="mono">0.00867479 <span class="asset BTC">BTC</span></td><td class="mono">¥135,937</td><td class="mono">¥15,670,277</td></tr>
+        <tr><td class="mono small">2024-11-22 13:49</td><td><span class="pill buy">Buy</span></td><td>BTC/JPY</td><td class="mono">0.01182785 <span class="asset BTC">BTC</span></td><td class="mono">¥185,445</td><td class="mono">¥15,678,645</td></tr>
+        <tr><td class="mono small">2024-11-22 13:49</td><td><span class="pill buy">Buy</span></td><td>BTC/JPY</td><td class="mono">0.00501228 <span class="asset BTC">BTC</span></td><td class="mono">¥78,618</td><td class="mono">¥15,685,074</td></tr>
+        <tr><td class="mono small">2024-12-20 23:36</td><td><span class="pill in">Deposit</span></td><td><span class="asset JPY">JPY</span></td><td class="mono">¥180,000</td><td class="mono small">—</td><td class="mono small">—</td></tr>
+        <tr><td class="mono small">2024-12-20 23:36</td><td><span class="pill buy">Buy</span></td><td>BTC/JPY</td><td class="mono">0.01168859 <span class="asset BTC">BTC</span></td><td class="mono">¥180,000</td><td class="mono">¥15,399,632</td></tr>
+        <tr><td class="mono small">2025-01-10 17:17</td><td><span class="pill in">Deposit</span></td><td><span class="asset JPY">JPY</span></td><td class="mono">¥837,805</td><td class="mono small">—</td><td class="mono small">—</td></tr>
+        <tr><td class="mono small">2025-01-10 17:17</td><td><span class="pill buy">Buy</span></td><td>BTC/JPY</td><td class="mono">0.02725271 <span class="asset BTC">BTC</span></td><td class="mono">¥420,000</td><td class="mono">¥15,411,306</td></tr>
+        <tr class="total"><td colspan="2"><b>TOTALS</b></td><td></td><td class="mono"><b>0.06445622 BTC</b></td><td class="mono"><b>¥999,999.99</b></td><td class="mono small">avg ¥15,514,000</td></tr>
       </tbody>
     </table>
-    <div class="small" style="margin-top:10px">Rakuten Wallet deposit-confirmation emails don't include amount. You'd need the CSV export from Account → Transaction History — <b>but you can't log in to get it.</b></div>
+    <div class="small" style="margin-top:10px">Deposits ¥1,417,805 → spent ¥999,999.99 on BTC → ¥417,805.01 left as JPY cash. After Jan 10 2025, no further activity (no buys, no withdrawals, no deposits). You stopped using this account 17 months ago.</div>
+  </div>
+  <div class="card">
+    <h2>BTC buys by date <span class="count">5 buys, all 2024-2025</span></h2>
+    <div class="chart-wrap"><canvas id="buyChart"></canvas></div>
   </div>
 </div>
 
 <div class="card" style="margin-bottom:14px">
-  <h2>Recoverable assets (what we know) <span class="count">unconfirmed amounts</span></h2>
-  <p style="font-size:13px;line-height:1.6;color:#e9e9f1;margin:0 0 12px">
-    Email trail confirms <b>3 JPY deposits</b> happened (Nov 2024 → Jan 2025) and that you traded on the platform (Nov 22 2024 price discrepancy email is targeted at people who placed orders that morning). What you bought, sold, and currently hold is only in the app. The app is now inaccessible.
-  </p>
+  <h2>Suggested actions <span class="count">since you have access</span></h2>
   <table>
-    <thead><tr><th>What you might have</th><th>How to find out</th></tr></thead>
+    <thead><tr><th>Action</th><th>Reason</th></tr></thead>
     <tbody>
-      <tr><td>JPY cash balance</td><td>Unknown — last deposit Jan 10 2025</td></tr>
-      <tr><td>Crypto holdings (BTC, ETH, XRP, etc.)</td><td>You bought into JP-only listings · amounts unknown</td></tr>
-      <tr><td>Web3 wallet contents</td><td>Activated Oct 2024 — may contain transferred crypto</td></tr>
-    </tbody>
-  </table>
-</div>
-
-<div class="card" style="margin-bottom:14px">
-  <h2>How to regain access <span class="count">your options</span></h2>
-  <table>
-    <thead><tr><th>Option</th><th>How</th><th>Likelihood</th></tr></thead>
-    <tbody>
-      <tr><td><b>1. Travel to Japan</b></td><td>Physically be in Japan and log in over Japanese IP. Then export everything and withdraw to Japanese bank, or transfer crypto out to BitOasis/OKX.</td><td>✅ Works</td></tr>
-      <tr><td><b>2. Contact support from Dubai</b></td><td>Email <span class="mono">support@rakuten-wallet.co.jp</span> explaining you're now Dubai-resident. Ask for a closure + withdrawal process. They'll require KYC + Japanese bank.</td><td>🟡 May work but slow</td></tr>
-      <tr><td><b>3. Japanese friend with your KYC</b></td><td>Not allowed by T&Cs. Account is tied to your identity.</td><td>❌ Don't try</td></tr>
-      <tr><td><b>4. Residency Japanese VPN</b></td><td>Rakuten specifically says they detect and block VPN traffic.</td><td>❌ Blocked</td></tr>
-      <tr><td><b>5. Abandon the account</b></td><td>If balance is small (a few thousand yen) it may not be worth the friction. But money sits there until you act.</td><td>⚠ Default if nothing done</td></tr>
+      <tr><td><b>1. Withdraw the ¥417,805 JPY back to Rakuten Bank</b></td><td>It's been sitting unused for 17 months. No reason to leave it parked here. Free transfer if going to your linked Rakuten Bank account.</td></tr>
+      <tr><td><b>2. Decide on the 0.0645 BTC</b></td><td>Currently ~-32% unrealized loss. Either: <b>(a) hold</b> until BTC recovers above ¥15.5M (could be years), or <b>(b) realize loss</b> for JP tax offset against other crypto gains.</td></tr>
+      <tr><td><b>3. Test withdrawal access</b></td><td>Try a small BTC withdrawal to your Binance Japan deposit address. If it works, you have a full exit path. If blocked, you'll know the overseas-block is partial.</td></tr>
+      <tr><td><b>4. Generate full tax CSV</b></td><td>You have it for 2024+2025. Keep these for Japanese tax filing. The 確定申告情報 (Tax Filing Info) screen in the app shows the same data.</td></tr>
     </tbody>
   </table>
 </div>
 
 <div class="footer">
-  <p><b>Bottom line.</b> This is a frozen JP account. You opened it Aug 2024, made 3 JPY deposits (Nov 2024–Jan 2025), traded a bit, then stopped. Last login Nov 20, 2025. As of Feb 18, 2026, the door is closed.</p>
-  <p><b>Recommended next step:</b> Email Rakuten Wallet support today asking for the account-closure process from overseas. You'll need to provide KYC + a Japanese bank account for JPY withdrawal. Crypto can probably be withdrawn to your Binance Japan address.</p>
-  <p><b>What's missing from this dashboard:</b> deposit amounts, asset holdings, trade history — all of which would require CSV export from inside the app, which requires login, which requires being in Japan.</p>
+  <p><b>The story.</b> You opened Rakuten Wallet in Aug 2024, deposited ¥1.42M JPY in three tranches (Nov 2024, Dec 2024, Jan 2025), and DCA'd ¥1M of it into BTC across 5 buys at an average price of ¥15.5M/BTC (≈$103k at the time). Then you stopped — last activity was the Jan 10 2025 buy. The remaining ¥417k is still sitting as cash.</p>
+  <p><b>Why you stopped:</b> probably because Jan 10 2025 was right around when you re-started DCA on <b>Binance Japan</b> at the same time (Jan 27 2025 first BTCJPY buy there). You consolidated all new JPY → Binance JP where you had 5+ years of history.</p>
+  <p><b>Going forward:</b> Rakuten Wallet's overseas-access policy makes this risky to keep long-term. Plan to withdraw and close if you can.</p>
 </div>
 
+<script>
+const $ = (s) => document.querySelector(s);
+const data = [
+  {date:'Nov 22', btc:0.00867479+0.01182785+0.00501228, jpy:135937+185445+78618},
+  {date:'Dec 20', btc:0.01168859, jpy:180000},
+  {date:'Jan 10', btc:0.02725271, jpy:420000},
+];
+new Chart($('#buyChart').getContext('2d'),{
+  type:'bar',
+  data:{
+    labels:data.map(d=>d.date),
+    datasets:[{
+      label:'JPY spent on BTC',
+      data:data.map(d=>d.jpy),
+      backgroundColor:'#bf0000',
+      borderRadius:6
+    }]
+  },
+  options:{
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:(c,i)=>`¥${c.raw.toLocaleString()} → ${data[c.dataIndex].btc.toFixed(6)} BTC`}}},
+    scales:{
+      x:{ticks:{color:'#8a8aa3'},grid:{display:false}},
+      y:{ticks:{color:'#8a8aa3',callback:v=>'¥'+(v/1000)+'k'},grid:{color:'#26263a'}}
+    }
+  }
+});
+</script>
 </body>
 </html>
